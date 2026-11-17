@@ -1,0 +1,453 @@
+[
+  {
+    "text": "asshole",
+    "emoji": "🍑⛳",
+    "bracket": "[ass] [hole]",
+    "emoji_spaced": "🍑 ⛳",
+    "explanation": "peach/butt/ass + golf hole",
+    "category": "rebus",
+    "frames": [
+      "Don't be such an {x}!",
+      "Stop acting like an {x}.",
+      "Nobody likes an {x}."
+    ]
+  },
+  {
+    "text": "believe",
+    "emoji": "🐝🍃",
+    "bracket": "[bee] [leaf]",
+    "emoji_spaced": "🐝 🍃",
+    "explanation": "bee + leaf sounds similar to believe",
+    "category": "phonetic",
+    "frames": [
+      "I {x} you.",
+      "Can you {x} it?"
+    ]
+  },
+  {
+    "text": "I love you",
+    "emoji": "👁️❤️🐑",
+    "bracket": "[eye] [love] [ewe]",
+    "emoji_spaced": "👁️ ❤️ 🐑",
+    "explanation": "eye + love + ewe sounds like I love you",
+    "category": "phonetic",
+    "frames": [
+      "{x}!",
+      "She said: {x}."
+    ]
+  },
+  {
+    "text": "iced coffee",
+    "emoji": "🧊☕",
+    "bracket": "[ice] [coffee]",
+    "emoji_spaced": "🧊 ☕",
+    "explanation": "ice + coffee",
+    "category": "compound",
+    "frames": [
+      "I ordered {x}.",
+      "Would you like {x}?"
+    ]
+  },
+  {
+    "text": "peach pie",
+    "emoji": "🍑🥧",
+    "bracket": "[peach] [pie]",
+    "emoji_spaced": "🍑 🥧",
+    "explanation": "peach + pie",
+    "category": "compound",
+    "frames": [
+      "I baked a {x}.",
+      "We ate {x}."
+    ]
+  },
+  {
+    "text": "apple pie",
+    "emoji": "🍎🥧",
+    "bracket": "[apple] [pie]",
+    "emoji_spaced": "🍎 🥧",
+    "explanation": "apple + pie",
+    "category": "compound",
+    "frames": [
+      "I baked an {x}."
+    ]
+  },
+  {
+    "text": "sunflower",
+    "emoji": "☀️🌻",
+    "bracket": "[sun] [flower]",
+    "emoji_spaced": "☀️ 🌻",
+    "explanation": "sun + flower",
+    "category": "compound",
+    "frames": [
+      "The {x} bloomed.",
+      "I planted a {x}."
+    ]
+  },
+  {
+    "text": "raincoat",
+    "emoji": "🌧️🧥",
+    "bracket": "[rain] [coat]",
+    "emoji_spaced": "🌧️ 🧥",
+    "explanation": "rain + coat",
+    "category": "compound",
+    "frames": [
+      "Take your {x}.",
+      "I need a {x}."
+    ]
+  },
+  {
+    "text": "starfish",
+    "emoji": "⭐🐟",
+    "bracket": "[star] [fish]",
+    "emoji_spaced": "⭐ 🐟",
+    "explanation": "star + fish",
+    "category": "compound",
+    "frames": [
+      "Look at that {x}."
+    ]
+  },
+  {
+    "text": "catfish",
+    "emoji": "🐈🐟",
+    "bracket": "[cat] [fish]",
+    "emoji_spaced": "🐈 🐟",
+    "explanation": "cat + fish",
+    "category": "compound",
+    "frames": [
+      "We found a {x}."
+    ]
+  },
+  {
+    "text": "firefly",
+    "emoji": "🔥🪰",
+    "bracket": "[fire] [fly]",
+    "emoji_spaced": "🔥 🪰",
+    "explanation": "fire + fly",
+    "category": "compound",
+    "frames": [
+      "A {x} appeared.",
+      "Look at that {x}."
+    ]
+  },
+  {
+    "text": "butterfly",
+    "emoji": "🧈🪰",
+    "bracket": "[butter] [fly]",
+    "emoji_spaced": "🧈 🪰",
+    "explanation": "butter + fly",
+    "category": "compound",
+    "frames": [
+      "A {x} landed.",
+      "Look at that {x}."
+    ]
+  },
+  {
+    "text": "honeymoon",
+    "emoji": "🍯🌙",
+    "bracket": "[honey] [moon]",
+    "emoji_spaced": "🍯 🌙",
+    "explanation": "honey + moon",
+    "category": "compound",
+    "frames": [
+      "They went on their {x}."
+    ]
+  },
+  {
+    "text": "bookworm",
+    "emoji": "📚🐛",
+    "bracket": "[book] [worm]",
+    "emoji_spaced": "📚 🐛",
+    "explanation": "book + worm",
+    "category": "compound",
+    "frames": [
+      "She is a {x}."
+    ]
+  },
+  {
+    "text": "icebreaker",
+    "emoji": "🧊🔨",
+    "bracket": "[ice] [breaker]",
+    "emoji_spaced": "🧊 🔨",
+    "explanation": "ice + breaking hammer",
+    "category": "metaphor",
+    "frames": [
+      "We need an {x}.",
+      "That joke was an {x}."
+    ]
+  },
+  {
+    "text": "computer bug",
+    "emoji": "💻🐛",
+    "bracket": "[computer] [bug]",
+    "emoji_spaced": "💻 🐛",
+    "explanation": "computer + bug",
+    "category": "compound",
+    "frames": [
+      "I found a {x}."
+    ]
+  },
+  {
+    "text": "banana bread",
+    "emoji": "🍌🍞",
+    "bracket": "[banana] [bread]",
+    "emoji_spaced": "🍌 🍞",
+    "explanation": "banana + bread",
+    "category": "compound",
+    "frames": [
+      "I made {x}."
+    ]
+  },
+  {
+    "text": "beehive",
+    "emoji": "🐝🏠",
+    "bracket": "[bee] [hive]",
+    "emoji_spaced": "🐝 🏠",
+    "explanation": "bee + house/hive",
+    "category": "compound",
+    "frames": [
+      "The {x} is buzzing."
+    ]
+  },
+  {
+    "text": "bedbug",
+    "emoji": "🛏️🐛",
+    "bracket": "[bed] [bug]",
+    "emoji_spaced": "🛏️ 🐛",
+    "explanation": "bed + bug",
+    "category": "compound",
+    "frames": [
+      "There is a {x}."
+    ]
+  },
+  {
+    "text": "hot dog",
+    "emoji": "🔥🐕",
+    "bracket": "[hot] [dog]",
+    "emoji_spaced": "🔥 🐕",
+    "explanation": "fire/hot + dog",
+    "category": "compound",
+    "frames": [
+      "That looks like a {x}."
+    ]
+  },
+  {
+    "text": "eye candy",
+    "emoji": "👁️🍬",
+    "bracket": "[eye] [candy]",
+    "emoji_spaced": "👁️ 🍬",
+    "explanation": "eye + candy",
+    "category": "idiom",
+    "frames": [
+      "The design is pure {x}."
+    ]
+  },
+  {
+    "text": "time flies",
+    "emoji": "⏰🪰",
+    "bracket": "[time] [flies]",
+    "emoji_spaced": "⏰ 🪰",
+    "explanation": "clock/time + flies",
+    "category": "idiom",
+    "frames": [
+      "{x} when you have fun."
+    ]
+  },
+  {
+    "text": "lemon cake",
+    "emoji": "🍋🍰",
+    "bracket": "[lemon] [cake]",
+    "emoji_spaced": "🍋 🍰",
+    "explanation": "lemon + cake",
+    "category": "compound",
+    "frames": [
+      "I baked a {x}."
+    ]
+  },
+  {
+    "text": "strawberry cake",
+    "emoji": "🍓🍰",
+    "bracket": "[strawberry] [cake]",
+    "emoji_spaced": "🍓 🍰",
+    "explanation": "strawberry + cake",
+    "category": "compound",
+    "frames": [
+      "We shared a {x}."
+    ]
+  },
+  {
+    "text": "campfire",
+    "emoji": "⛺🔥",
+    "bracket": "[camp] [fire]",
+    "emoji_spaced": "⛺ 🔥",
+    "explanation": "camp + fire",
+    "category": "compound",
+    "frames": [
+      "We sat by the {x}."
+    ]
+  },
+  {
+    "text": "paintbrush",
+    "emoji": "🎨🖌️",
+    "bracket": "[paint] [brush]",
+    "emoji_spaced": "🎨 🖌️",
+    "explanation": "paint + brush",
+    "category": "compound",
+    "frames": [
+      "Pass me the {x}."
+    ]
+  },
+  {
+    "text": "rainbow fish",
+    "emoji": "🌈🐟",
+    "bracket": "[rainbow] [fish]",
+    "emoji_spaced": "🌈 🐟",
+    "explanation": "rainbow + fish",
+    "category": "compound",
+    "frames": [
+      "I saw a {x}."
+    ]
+  },
+  {
+    "text": "snowman",
+    "emoji": "❄️👨",
+    "bracket": "[snow] [man]",
+    "emoji_spaced": "❄️ 👨",
+    "explanation": "snow + man",
+    "category": "compound",
+    "frames": [
+      "We made a {x}."
+    ]
+  },
+  {
+    "text": "moonlight",
+    "emoji": "🌙💡",
+    "bracket": "[moon] [light]",
+    "emoji_spaced": "🌙 💡",
+    "explanation": "moon + light",
+    "category": "compound",
+    "frames": [
+      "We walked in the {x}."
+    ]
+  },
+  {
+    "text": "brainstorm",
+    "emoji": "🧠⛈️",
+    "bracket": "[brain] [storm]",
+    "emoji_spaced": "🧠 ⛈️",
+    "explanation": "brain + storm",
+    "category": "compound",
+    "frames": [
+      "Time for a {x}."
+    ]
+  },
+  {
+    "text": "keyboard",
+    "emoji": "🔑📋",
+    "bracket": "[key] [board]",
+    "emoji_spaced": "🔑 📋",
+    "explanation": "key + board",
+    "category": "compound",
+    "frames": [
+      "I bought a new {x}."
+    ]
+  },
+  {
+    "text": "smartphone",
+    "emoji": "🧠📱",
+    "bracket": "[smart] [phone]",
+    "emoji_spaced": "🧠 📱",
+    "explanation": "brain/smart + phone",
+    "category": "compound",
+    "frames": [
+      "I lost my {x}."
+    ]
+  },
+  {
+    "text": "night owl",
+    "emoji": "🌙🦉",
+    "bracket": "[night] [owl]",
+    "emoji_spaced": "🌙 🦉",
+    "explanation": "night + owl",
+    "category": "idiom",
+    "frames": [
+      "I am a {x}."
+    ]
+  },
+  {
+    "text": "early bird",
+    "emoji": "🌅🐦",
+    "bracket": "[early] [bird]",
+    "emoji_spaced": "🌅 🐦",
+    "explanation": "sunrise/early + bird",
+    "category": "idiom",
+    "frames": [
+      "She is an {x}."
+    ]
+  },
+  {
+    "text": "cold turkey",
+    "emoji": "🥶🦃",
+    "bracket": "[cold] [turkey]",
+    "emoji_spaced": "🥶 🦃",
+    "explanation": "cold + turkey",
+    "category": "idiom",
+    "frames": [
+      "He quit {x}."
+    ]
+  },
+  {
+    "text": "heartbreak",
+    "emoji": "❤️🔨",
+    "bracket": "[heart] [break]",
+    "emoji_spaced": "❤️ 🔨",
+    "explanation": "heart + breaking hammer",
+    "category": "compound",
+    "frames": [
+      "That was {x}."
+    ]
+  },
+  {
+    "text": "sunrise",
+    "emoji": "☀️⬆️",
+    "bracket": "[sun] [rise]",
+    "emoji_spaced": "☀️ ⬆️",
+    "explanation": "sun + up",
+    "category": "compound",
+    "frames": [
+      "Watch the {x}."
+    ]
+  },
+  {
+    "text": "sunset",
+    "emoji": "☀️⬇️",
+    "bracket": "[sun] [set]",
+    "emoji_spaced": "☀️ ⬇️",
+    "explanation": "sun + down",
+    "category": "compound",
+    "frames": [
+      "Watch the {x}."
+    ]
+  },
+  {
+    "text": "book club",
+    "emoji": "📖♣️",
+    "bracket": "[book] [club]",
+    "emoji_spaced": "📖 ♣️",
+    "explanation": "book + club suit",
+    "category": "rebus",
+    "frames": [
+      "We joined a {x}."
+    ]
+  },
+  {
+    "text": "pizza party",
+    "emoji": "🍕🎉",
+    "bracket": "[pizza] [party]",
+    "emoji_spaced": "🍕 🎉",
+    "explanation": "pizza + party",
+    "category": "compound",
+    "frames": [
+      "We planned a {x}."
+    ]
+  }
+]
