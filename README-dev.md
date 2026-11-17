@@ -100,10 +100,11 @@ prompts and skip the curated phrase rules. Use `just eval --engine model`,
 .venv/bin/python -m emojilm.generate --mode emojify --text 'I love pizza and my dog'
 ```
 
-Auto mode applies curated phrase rules first. For the rebus and encode
-tasks it can also assemble compact emoji or bracketed word components. The neural
-model handles inputs that remain unresolved. Auto decode retains the input
-if neural generation changes text outside the emoji runs.
+Auto mode applies curated phrase rules first. When encoding bracketed
+text, it converts recognized components and keeps the rest of the
+sentence intact. For rebuses it can also assemble compact emoji
+components. Auto decode retains the input if neural generation changes
+text outside the emoji runs.
 
 Use `--engine model-compose` to translate components with the checkpoint,
 or `--engine compose` to use the component lexicon. Adjacent emojis form

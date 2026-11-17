@@ -4,9 +4,26 @@ import argparse
 from pathlib import Path
 import sys
 
-from .composition import default_composer
+from .composition import bracket_runs, default_composer
 from .data import emojis_in
 from .rules import LEXICON, apply_rules, decode_preserves_text, load_lexicon
+
+
+def encode_marked(source, entries):
+    pieces = []
+    offset = 0
+    for start, end, _ in bracket_runs(source):
+        marked = source[start:end]
+        pieces.append(source[offset:start])
+        pieces.append(apply_rules("encode", marked, entries) or marked)
+        offset = end
+    pieces.append(source[offset:])
+    ruled = "".join(pieces)
+    engines = ["rules"] if ruled != source else []
+    composed = default_composer(partial_encode=True).translate("encode", ruled)
+    if composed is not None:
+        engines.append("compose")
+    return composed or ruled, "+".join(engines) or "copy"
 
 
 def main():
@@ -37,19 +54,15 @@ def main():
     symbols = emojis_in(args.text) if args.mode == "decode" else []
     try:
         if args.engine in {"auto", "rules"} and args.mode != "emojify":
-            result = apply_rules(args.mode, args.text, load_lexicon(args.lexicon))
-            if result is not None or args.engine == "rules":
-                engine = "rules"
-                if (
-                    args.engine == "auto"
-                    and args.mode == "encode"
-                    and result is not None
-                ):
-                    composed = default_composer().translate("encode", result)
-                    if composed is not None:
-                        result = composed
-                        engine = "rules+compose"
+            entries = load_lexicon(args.lexicon)
+            if args.engine == "auto" and args.mode == "encode" and "[" in args.text:
+                result, engine = encode_marked(args.text, entries)
                 print(f"engine={engine}", file=sys.stderr)
+                print(result)
+                return
+            result = apply_rules(args.mode, args.text, entries)
+            if result is not None or args.engine == "rules":
+                print("engine=rules", file=sys.stderr)
                 print(args.text if result is None else result)
                 return
             if args.mode == "decode" and not symbols:
@@ -57,9 +70,7 @@ def main():
                 print(args.text)
                 return
         if args.engine == "compose" or (
-            args.engine == "auto"
-            and args.mode in {"encode", "rebus"}
-            and args.hints is None
+            args.engine == "auto" and args.mode == "rebus" and args.hints is None
         ):
             result = default_composer().translate(
                 args.mode, args.text, automatic=args.engine == "auto"

@@ -1,5 +1,7 @@
 """Load a bundled checkpoint and generate answers with PyTorch."""
 
+import math
+
 import torch
 
 from .composition import Composer
@@ -62,7 +64,7 @@ class NeuralComposer(Composer):
     """Use the checkpoint's individual rebus readings in both directions."""
 
     def __init__(self, model, tok, max_new=64):
-        super().__init__({})
+        super().__init__({}, partial_encode=True)
         self.model = model
         self.tok = tok
         self.max_new = max_new
@@ -93,16 +95,25 @@ class NeuralComposer(Composer):
     def write_component(self, word):
         key = " ".join(word.split())
         if key not in self.symbols:
-            glyph = self.rank_glyphs(key)
-            if glyph and any(
-                reading.casefold() == key.casefold()
-                for reading in self.component_readings(glyph)
-            ):
-                self.symbols[key] = glyph
-            elif key.casefold() != key:
-                self.symbols[key] = self.write_component(key.casefold())
-            else:
-                self.symbols[key] = None
+            ranking = self.rank_glyphs(key)
+            glyph = None
+            for rank, (candidate, score) in enumerate(ranking):
+                # A greedy reading may miss a well-supported complete label.
+                decisive = (
+                    rank == 0
+                    and len(ranking) > 1
+                    and score >= math.log(0.05)
+                    and score - ranking[1][1] >= math.log(100)
+                )
+                if decisive or any(
+                    reading.casefold() == key.casefold()
+                    for reading in self.component_readings(candidate)
+                ):
+                    glyph = candidate
+                    break
+            if glyph is None and key.casefold() != key:
+                glyph = self.write_component(key.casefold())
+            self.symbols[key] = glyph
         return self.symbols[key]
 
     @torch.inference_mode()
@@ -111,7 +122,7 @@ class NeuralComposer(Composer):
         labels = self.tok.encode(word)
         width = len(labels) + 4
         if not labels or not self.glyphs or width > self.model.cfg.ctx:
-            return None
+            return []
         if self.prompts is None:
             self.prompts = torch.tensor(
                 [self.tok.build("rebus", emoji)[0] for emoji in self.glyphs],
@@ -121,7 +132,7 @@ class NeuralComposer(Composer):
         label_ids = torch.tensor(labels, dtype=torch.long, device=self.device)
         stops = [self.tok.sid["<eos>"], self.tok.sid["<alt>"]]
         batch_size = min(128, max(1, 2048 // width))
-        best_score, best_glyph = float("-inf"), None
+        scores_by_batch = []
         for offset in range(0, len(self.glyphs), batch_size):
             prompts = self.prompts[offset : offset + batch_size]
             inputs = torch.cat((prompts, label_ids.expand(len(prompts), -1)), dim=1)
@@ -130,8 +141,12 @@ class NeuralComposer(Composer):
             targets = label_ids.view(1, -1, 1).expand(len(prompts), -1, -1)
             words = log_probs[:, :-1].gather(-1, targets).squeeze(-1).sum(-1)
             scores = words + log_probs[:, -1, stops].logsumexp(-1)
-            index = int(scores.argmax())
-            score = float(scores[index])
-            if score > best_score:
-                best_score, best_glyph = score, self.glyphs[offset + index]
-        return best_glyph
+            scores_by_batch.append(scores)
+        scores = torch.cat(scores_by_batch)
+        best = scores.argsort(descending=True, stable=True)[:4]
+        return list(
+            zip(
+                (self.glyphs[i] for i in best.tolist()),
+                scores[best].tolist(),
+            )
+        )

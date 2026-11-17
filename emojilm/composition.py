@@ -53,9 +53,10 @@ def compact_emoji_runs(text):
 
 
 class Composer:
-    def __init__(self, readings, known_combinations=()):
+    def __init__(self, readings, known_combinations=(), *, partial_encode=False):
         self.readings = {}
         self.symbols = {}
+        self.partial_encode = partial_encode
         self.known_combinations = {canonical(emoji) for emoji in known_combinations}
         priorities = {}
         for emoji, words in readings.items():
@@ -73,6 +74,22 @@ class Composer:
     def write_component(self, word):
         return self.symbols.get(canonical(word))
 
+    def render_encode_run(self, source, replacements):
+        if all(replacements):
+            return "".join(replacements)
+        if not self.partial_encode or not any(replacements):
+            return source
+        pieces = []
+        offset = 0
+        previous = None
+        for (start, end, _), glyph in zip(bracket_words(source), replacements):
+            if not (previous and glyph):
+                pieces.append(source[offset:start])
+            pieces.append(glyph or source[start:end])
+            offset = end
+            previous = glyph
+        return "".join(pieces)
+
     def translate(self, task, source, *, automatic=False):
         if task == "encode":
             runs = bracket_runs(source)
@@ -86,7 +103,6 @@ class Composer:
             original = source[start:end]
             if task == "encode":
                 replacements = [self.write_component(word) for word in parts]
-                separator = ""
             else:
                 if automatic and (
                     len(parts) < 2 or canonical(original) in self.known_combinations
@@ -101,15 +117,18 @@ class Composer:
             if automatic and not all(replacements):
                 return None
             pieces.append(source[offset:start])
-            pieces.append(
-                separator.join(replacements) if all(replacements) else original
-            )
+            if task == "encode":
+                pieces.append(self.render_encode_run(original, replacements))
+            else:
+                pieces.append(
+                    separator.join(replacements) if all(replacements) else original
+                )
             offset = end
         pieces.append(source[offset:])
         candidate = "".join(pieces)
         return candidate if candidate != source else None
 
 
-def default_composer():
+def default_composer(*, partial_encode=False):
     known = [entry["emoji"] for entry in REBUSES] + [entry[0] for entry in BANK]
-    return Composer(hint_dictionary(), known)
+    return Composer(hint_dictionary(), known, partial_encode=partial_encode)
