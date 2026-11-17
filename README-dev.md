@@ -50,8 +50,11 @@ when all four tasks are available. Emoji summaries teach the `emojify` task,
 while encode examples teach phrase substitution. Validation keeps variants of
 the same input and reversible translation pairs together. The separate holdout contains 120 prompts across ten
 reserved emoji combinations. Training data and tokenizer fitting exclude the
-holdout. `just eval` measures exact matches using the model, without invoking
-the rule engine.
+holdout. `just eval` reports separate exact-match scores for direct model
+generation, composition using the checkpoint's individual emoji readings,
+and composition using the component lexicon. All three use the same
+prompts and skip the curated phrase rules. Use `just eval --engine model`,
+`--engine model-compose`, or `--engine compose` to run one evaluation.
 
 ## Translate
 
@@ -62,11 +65,17 @@ the rule engine.
 .venv/bin/python -m emojilm.generate --mode emojify --text 'I love pizza and my dog'
 ```
 
-Auto mode applies curated rules when it finds a match and preserves the
-surrounding text. With a checkpoint, it uses the model for unmatched inputs. Auto decode retains the input if the
-model changes text outside the emoji runs. Choose `--engine model` to see neural results on a known rebus, or
-`--engine rules` to use the dictionary alone. Rules work before training.
-`emojify` requires a checkpoint.
+Auto mode applies curated phrase rules first. For the rebus and encode
+tasks it can also assemble compact emoji or bracketed word components. The neural
+model handles inputs that remain unresolved. Auto decode retains the input
+if neural generation changes text outside the emoji runs.
+
+Use `--engine model-compose` to translate components with the checkpoint,
+or `--engine compose` to use the component lexicon. Adjacent emojis form
+a compound and literal spaces stay in the output. Both modes encode
+explicit bracketed components. Use `--engine model` for direct neural
+generation or `--engine rules` for curated phrases. `emojify` uses direct
+neural generation.
 
 `just smoke` runs eight CPU steps and reloads `ckpt/smoke/model.pt` for
 inference. It checks the pipeline. Use `just test` for the regression tests.

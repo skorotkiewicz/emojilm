@@ -1,5 +1,8 @@
 """Hand-written seed examples and the original compositional holdout."""
 
+import json
+from pathlib import Path
+
 from .tokenizer import emoji_at
 
 LEXICON = {
@@ -518,3 +521,8 @@ def gen_holdout():
             {"task": "rebus", "src": r["emoji"], "tgt": r["phrase"], "tag": "holdout"}
         )
     return ex
+
+
+def load_jsonl(path):
+    with Path(path).open(encoding="utf-8") as stream:
+        return [json.loads(line) for line in stream]

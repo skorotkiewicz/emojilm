@@ -3,7 +3,6 @@
 import argparse
 from collections import defaultdict
 from contextlib import nullcontext
-import json
 import math
 from pathlib import Path
 import random
@@ -13,15 +12,11 @@ import torch
 from torch.nn import functional as F
 
 from .config import Config
+from .data import load_jsonl
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
 TASK_WEIGHTS = {"decode": 35, "encode": 30, "rebus": 25, "emojify": 10}
-
-
-def load_jsonl(path):
-    with Path(path).open(encoding="utf-8") as stream:
-        return [json.loads(line) for line in stream]
 
 
 def pack_rows(rows, tok, ctx):
