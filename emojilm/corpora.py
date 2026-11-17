@@ -8,6 +8,7 @@ import random
 import re
 
 from . import data
+from .fetch_data import CLDR_PATH, T2E_PATH, fetch_missing
 from .rebus_bank import (
     BANK,
     CARRIERS,
@@ -329,12 +330,24 @@ def main():
     parser.add_argument(
         "--t2e", type=Path, help="Local Text2Emoji JSONL with text and emoji fields"
     )
+    parser.add_argument(
+        "--fetch-missing",
+        action="store_true",
+        help="Download missing default corpora into data/raw",
+    )
     parser.add_argument("--t2e-limit", type=int, default=12000)
     parser.add_argument("--cldr-limit", type=int, default=1800)
     parser.add_argument("--core-repeat", type=int, default=3)
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
     try:
+        if args.fetch_missing:
+            args.cldr = args.cldr or CLDR_PATH
+            args.t2e = args.t2e or T2E_PATH
+            fetch_missing(
+                args.cldr if args.cldr == CLDR_PATH and args.cldr_limit > 0 else None,
+                args.t2e if args.t2e == T2E_PATH and args.t2e_limit > 0 else None,
+            )
         stats = build_mix(
             args.data,
             args.cldr,

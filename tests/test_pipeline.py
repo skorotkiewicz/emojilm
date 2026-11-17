@@ -12,6 +12,30 @@ from emojilm.tokenizer import Tokenizer
 
 
 class PipelineTests(unittest.TestCase):
+    def test_fetch_missing_sources_converts_csv_and_reuses_local_files(self):
+        from emojilm.fetch_data import fetch_missing
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cldr = {"annotations": {"annotations": {"🍕": {"tts": ["pizza"]}}}}
+            cldr_source = root / "annotations.json"
+            cldr_source.write_text(json.dumps(cldr), encoding="utf-8")
+            t2e_source = root / "text2emoji.csv"
+            t2e_source.write_text(
+                'text,emoji,topic\n"Pizza, please",🍕,food\n', encoding="utf-8"
+            )
+            cldr_out, t2e_out = root / "raw/cldr_en.json", root / "raw/text2emoji.jsonl"
+
+            fetch_missing(cldr_out, t2e_out, cldr_source.as_uri(), t2e_source.as_uri())
+            self.assertEqual(json.loads(cldr_out.read_text(encoding="utf-8")), cldr)
+            self.assertEqual(
+                json.loads(t2e_out.read_text(encoding="utf-8")),
+                {"text": "Pizza, please", "emoji": "🍕"},
+            )
+            cldr_source.unlink()
+            t2e_source.unlink()
+            fetch_missing(cldr_out, t2e_out, cldr_source.as_uri(), t2e_source.as_uri())
+
     def test_tokenizer_preserves_copy_text_and_encodes_rebus_alternatives(self):
         sample = "  hello\t🍑⛳\n▁ 🧑🏽‍🚀 "
         tok = Tokenizer.train(["hello  there", "look here"], ["🍑", "⛳"])

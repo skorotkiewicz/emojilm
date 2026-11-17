@@ -6,13 +6,13 @@ default:
 
 setup:
     python3 -m venv .venv
-    "{{python}}" -m pip install -r requirements.txt
+    "{{python}}" -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 data *args:
     "{{python}}" -m emojilm.corpora {{args}}
 
 data-full cldr="data/raw/cldr_en.json" t2e="data/raw/text2emoji.jsonl":
-    "{{python}}" -m emojilm.corpora --cldr {{quote(cldr)}} --t2e {{quote(t2e)}}
+    "{{python}}" -m emojilm.corpora --fetch-missing --cldr {{quote(cldr)}} --t2e {{quote(t2e)}}
 
 train *args:
     "{{python}}" -m emojilm.train {{args}}
