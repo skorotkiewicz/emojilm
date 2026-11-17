@@ -29,6 +29,41 @@ command line, for example `just train --device cuda --steps 8000 --batch 16`.
 Every 250 steps and at the end, training reports validation loss by task. It
 saves the best checkpoint to `ckpt/model.pt` with its tokenizer embedded.
 
+## Train for direct composition
+
+Use the composition recipe to teach the model to translate closed
+compounds and preserve the text around them.
+
+```sh
+just data-composition
+just train-composition --device cuda
+just eval --engine model --ckpt ckpt/composition/model.pt --data data/composition/holdout.jsonl
+```
+
+The builder adds individual emoji readings, closed compounds, and
+examples that distinguish adjacent emojis from emojis separated by
+spaces. Compound targets use separately encoded word parts so the model
+can learn how to join them. The recipe uses 12,000 steps, a batch size of
+32, a learning rate of 0.0004, and a 256-token context.
+
+Every 1,000 steps and at the end, the trainer tests direct generation
+on 60 development prompts drawn from 12 reserved combinations. It
+saves the checkpoint with the most exact matches, using regular
+validation loss to break ties. The final 120-prompt holdout is reserved
+for comparison after training.
+
+The prepared experiment lives in `data/composition/`. Copy that
+directory with the project to train on a different machine. The new
+checkpoint is written to `ckpt/composition/model.pt`.
+
+Training appends loss and validation scores to `train.log` in the
+checkpoint directory. For a composition run, the log is
+`ckpt/composition/train.log`.
+
+```sh
+tail -f ckpt/composition/train.log
+```
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses

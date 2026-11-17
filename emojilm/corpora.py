@@ -8,6 +8,7 @@ import random
 import re
 
 from . import data
+from .compound_data import composition_examples
 from .fetch_data import CLDR_PATH, T2E_PATH, fetch_missing
 from .rebus_bank import (
     BANK,
@@ -116,22 +117,26 @@ def emoji_runs(text):
 def reserved_filter(holdout):
     rebuses = [row for row in holdout if row["task"] == "rebus"]
     combinations = tuple("".join(emoji_runs(row["src"])) for row in rebuses)
-    phrases = re.compile(
-        r"(?<!\w)(?:"
-        + "|".join(re.escape(canonical(row["tgt"])) for row in rebuses)
-        + r")(?!\w)"
+    phrases = (
+        re.compile(
+            r"(?<!\w)(?:"
+            + "|".join(re.escape(canonical(row["tgt"])) for row in rebuses)
+            + r")(?!\w)"
+        )
+        if rebuses
+        else None
     )
 
     bracket = re.compile(r"\[[^\[\]]+\]")
     decompositions = {
-        tuple(canonical(part) for part in bracket.findall(row["src"]))
+        tuple(canonical(part) for part in parts)
         for row in holdout
-        if row["task"] == "encode"
+        if row["task"] == "encode" and (parts := bracket.findall(row["src"]))
     }
 
     def reserved(row):
         for text in (row["src"], row["tgt"]):
-            if phrases.search(canonical(text)):
+            if phrases is not None and phrases.search(canonical(text)):
                 return True
             if "[" in text:
                 parts = tuple(canonical(part) for part in bracket.findall(text))
@@ -201,7 +206,10 @@ def merge_targets(rows):
         elif row["task"] == "rebus":
             first = merged[key]
             readings = first["tgt"].split(" <alt> ") + row["tgt"].split(" <alt> ")
-            merged[key] = {**first, "tgt": " <alt> ".join(dict.fromkeys(readings))}
+            target = " <alt> ".join(dict.fromkeys(readings))
+            if target != first["tgt"]:
+                merged[key] = {**first, "tgt": target}
+                merged[key].pop("target_parts", None)
     return list(merged.values())
 
 
@@ -210,7 +218,7 @@ def group_key(text):
     return "".join(canonical(text).split())
 
 
-def split_rows(rows, rng):
+def split_rows(rows, rng, keep_in_train=()):
     # Keep hinted inputs and reversible encode/decode pairs in the same split.
     parents = {}
 
@@ -238,8 +246,13 @@ def split_rows(rows, rng):
     keys = list(groups)
     rng.shuffle(keys)
     val_size = max(1, round(len(keys) * 0.04))
-    for i, key in enumerate(keys):
-        (val if i < val_size else train).extend(groups[key])
+    locked = {root(key) for key in keep_in_train}
+    for key in keys:
+        if val_size and key not in locked:
+            val.extend(groups[key])
+            val_size -= 1
+        else:
+            train.extend(groups[key])
     return train, val
 
 
@@ -253,6 +266,8 @@ def build_mix(
     bpe_sample=6000,
     seed=7,
     size=4096,
+    *,
+    composition=False,
 ):
     if min(t2e_limit, cldr_limit) < 0 or min(core_repeat, bpe_sample) < 1:
         raise ValueError(
@@ -261,6 +276,10 @@ def build_mix(
     rng = random.Random(seed)
     holdout = data.gen_holdout() + list(qwen_bank(HOLDOUT_BANK, "holdout"))
     reserved = reserved_filter(holdout)
+    additions, composition_dev = [], []
+    if composition:
+        additions, composition_dev = composition_examples(seed, reserved)
+        reserved = reserved_filter(holdout + composition_dev)
     core = data.gen_examples()
     core += list(qwen_bank(BANK, "rebus")) + list(qwen_singles())
     gpt = [
@@ -269,21 +288,42 @@ def build_mix(
         if not reserved(example("rebus", entry["emoji"], entry["text"], "gpt"))
     ]
     core += list(gpt_examples(gpt))
+    core += additions
     cldr = [
         row for row in cldr_examples(cldr_path, cldr_limit, rng) if not reserved(row)
     ]
     curated = merge_targets([row for row in core if not reserved(row)] + cldr)
+    atom_prompts = set()
+    if composition:
+        for row in curated:
+            task, source, target = row["task"], row["src"], row["tgt"]
+            if row["tag"] == "cldr":
+                continue
+            if task == "rebus" and data.emojis_in(source) == [source]:
+                atom_prompts.add(group_key(source))
+            if (
+                task == "encode"
+                and re.fullmatch(r"\[[^\[\]]+\]", source)
+                and data.emojis_in(target) == [target]
+            ):
+                atom_prompts.add(group_key(source))
     dictionary = hint_dictionary()
     hinted = []
     for row in curated:
+        if row["tag"] in {"cldr", "composition"}:
+            continue
         hint = hint_for(row["src"], dictionary)
-        if row["tag"] != "cldr" and hint and rng.random() < 0.5:
+        if hint and rng.random() < 0.5:
             hinted.append({**row, "hint": hint})
 
     t2e = text2emoji_examples(t2e_path, t2e_limit, rng, reserved)
-    train, val = split_rows(curated + hinted + t2e, rng)
+    train, val = split_rows(curated + hinted + t2e, rng, atom_prompts)
 
-    texts = [row[field] for row in train for field in ("src", "tgt")]
+    texts = [
+        part
+        for row in train
+        for part in (row["src"], *row.get("target_parts", [row["tgt"]]))
+    ]
     texts += [row["hint"] for row in train if "hint" in row]
     rng.shuffle(texts)
     inventory = {}
@@ -307,11 +347,14 @@ def build_mix(
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     tok.save(outdir / "tokenizer.json")
-    for name, rows in (("train", train), ("val", val), ("holdout", holdout)):
+    splits = [("train", train), ("val", val), ("holdout", holdout)]
+    if composition:
+        splits.append(("composition-val", composition_dev))
+    for name, rows in splits:
         with (outdir / f"{name}.jsonl").open("w", encoding="utf-8") as stream:
             for row in rows:
                 stream.write(json.dumps(row, ensure_ascii=False) + "\n")
-    return {
+    counts = {
         name: len(rows)
         for name, rows in (
             ("train", train),
@@ -321,6 +364,10 @@ def build_mix(
             ("t2e", t2e),
         )
     }
+    if composition:
+        counts["composition_train"] = sum(row["tag"] == "composition" for row in train)
+        counts["composition_val"] = len(composition_dev)
+    return counts
 
 
 def main():
@@ -339,6 +386,11 @@ def main():
     parser.add_argument("--cldr-limit", type=int, default=1800)
     parser.add_argument("--core-repeat", type=int, default=3)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--composition",
+        action="store_true",
+        help="Add component training and a separate compositional validation split",
+    )
     args = parser.parse_args()
     try:
         if args.fetch_missing:
@@ -356,6 +408,7 @@ def main():
             args.cldr_limit,
             args.core_repeat,
             seed=args.seed,
+            composition=args.composition,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))

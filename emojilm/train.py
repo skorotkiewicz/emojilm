@@ -1,18 +1,22 @@
-"""Train on target tokens and save the checkpoint with the lowest validation loss."""
+"""Train on target tokens and save the best checkpoint on validation data."""
 
 import argparse
 from collections import defaultdict
 from contextlib import nullcontext
+from datetime import datetime, timezone
 import math
 from pathlib import Path
 import random
+from shutil import get_terminal_size
 import tempfile
 
 import torch
 from torch.nn import functional as F
+from tqdm import tqdm
 
 from .config import Config
-from .data import load_jsonl
+from .data import load_jsonl, matches_reference
+from .inference import generate
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
@@ -24,7 +28,13 @@ def pack_rows(rows, tok, ctx):
     skipped = defaultdict(int)
     for row in rows:
         task = row["task"]
-        ids, mask = tok.build(task, row["src"], row["tgt"], row.get("hint"))
+        ids, mask = tok.build(
+            task,
+            row["src"],
+            row["tgt"],
+            row.get("hint"),
+            target_parts=row.get("target_parts"),
+        )
         if len(ids) - 1 > ctx:
             skipped[task] += 1
             continue
@@ -67,9 +77,31 @@ def validate(model, rows_by_task, pad, batch_size, device):
     return losses
 
 
-def save_checkpoint(path, model, tok, step, losses):
+def validate_composition(model, tok, rows):
+    correct = 0
+    model.eval()
+    try:
+        for row in rows:
+            task, source = row["task"], row["src"]
+            prompt, _ = tok.build(task, source)
+            if len(prompt) <= model.cfg.ctx:
+                answers = generate(model, tok, task, source)
+                correct += matches_reference(row, answers)
+    finally:
+        model.train()
+    return {"exact": correct, "total": len(rows)}
+
+
+def save_checkpoint(path, model, tok, step, losses, composition_score=None):
     with tempfile.TemporaryDirectory(dir=path.parent) as directory:
         snapshot = Path(directory) / path.name
+        score_metadata = (
+            {}
+            if composition_score is None
+            else {
+                "composition_validation": composition_score,
+            }
+        )
         torch.save(
             {
                 "format": "emojilm-1",
@@ -78,6 +110,7 @@ def save_checkpoint(path, model, tok, step, losses):
                 "tokenizer": tok.to_dict(),
                 "step": step,
                 "validation_loss": losses,
+                **score_metadata,
             },
             snapshot,
         )
@@ -100,14 +133,29 @@ def main():
     parser.add_argument("--ctx", type=int, default=256)
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--eval-every", type=int, default=250)
+    parser.add_argument(
+        "--composition-val",
+        type=Path,
+        help="Separate prompts for direct-generation checkpoint selection",
+    )
+    parser.add_argument("--composition-eval-every", type=int, default=1000)
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument(
         "--device", default="cuda" if torch.cuda.is_available() else "cpu"
     )
     args = parser.parse_args()
-    if min(args.steps, args.batch, args.ctx, args.eval_every) < 1:
-        parser.error("steps, batch, ctx and eval-every must be positive")
+    if (
+        min(
+            args.steps,
+            args.batch,
+            args.ctx,
+            args.eval_every,
+            args.composition_eval_every,
+        )
+        < 1
+    ):
+        parser.error("steps, batch, ctx and evaluation intervals must be positive")
     if (
         args.threads < 0
         or args.warmup < 0
@@ -129,10 +177,15 @@ def main():
             load_jsonl(args.data / "train.jsonl"), tok, args.ctx
         )
         val, val_skipped = pack_rows(load_jsonl(args.data / "val.jsonl"), tok, args.ctx)
+        composition_val = (
+            load_jsonl(args.composition_val) if args.composition_val else []
+        )
     except (OSError, ValueError) as error:
         parser.error(str(error))
     if not train or not val:
         parser.error("Training and validation both need rows that fit --ctx")
+    if args.composition_val and not composition_val:
+        parser.error("Composition validation needs at least one prompt")
     if train_skipped or val_skipped:
         print(
             f"Rows exceeding context were skipped. train={train_skipped} val={val_skipped}",
@@ -163,58 +216,105 @@ def main():
 
     args.out.mkdir(parents=True, exist_ok=True)
     checkpoint = args.out / "model.pt"
-    best = math.inf
-    print(
-        f"EmojiLM parameters={model.num_params():,} device={device} "
-        f"train={sum(map(len, train.values()))} val={sum(map(len, val.values()))} "
-        f"bf16={mixed_precision}",
-        flush=True,
-    )
-    for step in range(1, args.steps + 1):
-        if step <= warmup:
-            lr = args.lr * step / warmup
-        else:
-            progress = (step - warmup - 1) / max(1, args.steps - warmup - 1)
-            lr = args.lr * (0.1 + 0.45 * (1 + math.cos(math.pi * progress)))
-        for group in opt.param_groups:
-            group["lr"] = lr
+    best = (math.inf, math.inf)
+    terminal = get_terminal_size()
+    with (
+        (args.out / "train.log").open("a", encoding="utf-8", buffering=1) as train_log,
+        tqdm(
+            range(1, args.steps + 1),
+            desc="Training",
+            unit="step",
+            disable=None,
+            ncols=terminal.columns or 80,
+            nrows=terminal.lines or 24,
+        ) as steps,
+    ):
 
-        batch_tasks = rng.choices(tasks, weights=weights, k=args.batch)
-        inputs, targets = batch_tensors(
-            [rng.choice(train[task]) for task in batch_tasks], pad, device
+        def report(message, *, console=True):
+            print(message, file=train_log)
+            if console:
+                with steps.external_write_mode():
+                    print(message, flush=True)
+
+        started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        report(f"Run started at {started_at}", console=False)
+        report(
+            f"EmojiLM parameters={model.num_params():,} device={device} "
+            f"train={sum(map(len, train.values()))} val={sum(map(len, val.values()))} "
+            f"bf16={mixed_precision}"
         )
-        opt.zero_grad(set_to_none=True)
-        precision = (
-            torch.autocast("cuda", dtype=torch.bfloat16)
-            if mixed_precision
-            else nullcontext()
-        )
-        with precision:
-            loss = loss_for(model, inputs, targets)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0, error_if_nonfinite=True)
-        opt.step()
-        if step == 1 or step % 25 == 0:
-            print(f"step={step} loss={loss.item():.4f} lr={lr:.2e}", flush=True)
-        if step % args.eval_every == 0 or step == args.steps:
-            losses = validate(model, val, pad, args.batch, device)
-            if not all(math.isfinite(loss) for loss in losses.values()):
-                raise RuntimeError("Non-finite validation loss")
-            # Use the task mix here too so summary quality cannot dominate checkpoint selection.
-            score = sum(
-                loss * TASK_WEIGHTS[task] for task, loss in losses.items()
-            ) / sum(TASK_WEIGHTS[task] for task in losses)
-            print(
-                f"step={step} validation={score:.4f} "
-                + " ".join(
-                    f"{task}={loss:.4f}" for task, loss in sorted(losses.items())
-                ),
-                flush=True,
+        for step in steps:
+            if step <= warmup:
+                lr = args.lr * step / warmup
+            else:
+                progress = (step - warmup - 1) / max(1, args.steps - warmup - 1)
+                lr = args.lr * (0.1 + 0.45 * (1 + math.cos(math.pi * progress)))
+            for group in opt.param_groups:
+                group["lr"] = lr
+
+            batch_tasks = rng.choices(tasks, weights=weights, k=args.batch)
+            inputs, targets = batch_tensors(
+                [rng.choice(train[task]) for task in batch_tasks], pad, device
             )
-            if score < best:
-                save_checkpoint(checkpoint, model, tok, step, losses)
-                best = score
-    print(f"Best checkpoint: {checkpoint}", flush=True)
+            opt.zero_grad(set_to_none=True)
+            precision = (
+                torch.autocast("cuda", dtype=torch.bfloat16)
+                if mixed_precision
+                else nullcontext()
+            )
+            with precision:
+                loss = loss_for(model, inputs, targets)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), 1.0, error_if_nonfinite=True
+            )
+            opt.step()
+            console_step = steps.disable and (step == 1 or step % args.eval_every == 0)
+            if console_step or step == 1 or step % 25 == 0 or step == args.steps:
+                step_loss = loss.item()
+                report(
+                    f"step={step} loss={step_loss:.4f} lr={lr:.2e}",
+                    console=console_step,
+                )
+                if not steps.disable:
+                    steps.set_postfix(
+                        loss=f"{step_loss:.4f}", lr=f"{lr:.2e}", refresh=False
+                    )
+            composition_due = bool(composition_val) and (
+                step % args.composition_eval_every == 0 or step == args.steps
+            )
+            if step % args.eval_every == 0 or step == args.steps or composition_due:
+                losses = validate(model, val, pad, args.batch, device)
+                if not all(math.isfinite(loss) for loss in losses.values()):
+                    raise RuntimeError("Non-finite validation loss")
+                # Use the task mix here too so summary quality cannot dominate checkpoint selection.
+                score = sum(
+                    loss * TASK_WEIGHTS[task] for task, loss in losses.items()
+                ) / sum(TASK_WEIGHTS[task] for task in losses)
+                report(
+                    f"step={step} validation={score:.4f} "
+                    + " ".join(
+                        f"{task}={loss:.4f}" for task, loss in sorted(losses.items())
+                    )
+                )
+                composition_score = None
+                candidate = (0, score)
+                if composition_due:
+                    composition_score = validate_composition(
+                        model, tok, composition_val
+                    )
+                    exact, total = (
+                        composition_score["exact"],
+                        composition_score["total"],
+                    )
+                    report(f"step={step} composition exact={exact}/{total}")
+                    candidate = (-exact, score)
+                if (not composition_val or composition_due) and candidate < best:
+                    save_checkpoint(
+                        checkpoint, model, tok, step, losses, composition_score
+                    )
+                    best = candidate
+        report(f"Best checkpoint: {checkpoint}")
 
 
 if __name__ == "__main__":

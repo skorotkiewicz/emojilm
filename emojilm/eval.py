@@ -6,23 +6,19 @@ from pathlib import Path
 
 from .composition import default_composer
 from .corpora import hint_dictionary, hint_for
-from .data import load_jsonl
+from .data import load_jsonl, matches_reference
 
 
 def report(rows, predict, engine, *, hints=False):
     correct, total, skipped = Counter(), Counter(), Counter()
     for row in rows:
-        task, target = row["task"], row["tgt"]
+        task = row["task"]
         total[task] += 1
         answers = predict(row)
         if answers is None:
             skipped[task] += 1
             continue
-        expected = target.split(" <alt> ") if task == "rebus" else [target]
-        correct[task] += bool(
-            {answer.strip() for answer in answers}
-            & {answer.strip() for answer in expected}
-        )
+        correct[task] += matches_reference(row, answers)
     print(f"engine={engine} hints={hints}")
     for task in sorted(total):
         print(

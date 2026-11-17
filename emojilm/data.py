@@ -526,3 +526,11 @@ def gen_holdout():
 def load_jsonl(path):
     with Path(path).open(encoding="utf-8") as stream:
         return [json.loads(line) for line in stream]
+
+
+def matches_reference(row, answers):
+    target = row["tgt"]
+    expected = target.split(" <alt> ") if row["task"] == "rebus" else [target]
+    return bool(
+        {answer.strip() for answer in answers} & {answer.strip() for answer in expected}
+    )

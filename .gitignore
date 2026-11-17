@@ -6,5 +6,6 @@ __pycache__/
 /data/val.jsonl
 /data/holdout.jsonl
 /data/tokenizer.json
+/data/composition/
 /ckpt/
 .data-build

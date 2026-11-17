@@ -298,19 +298,25 @@ class Tokenizer:
             out.append(bytes(buf).decode("utf-8", "replace"))
         return "".join(out)
 
-    def build(self, task, src, tgt=None, hint=None):
+    def build(self, task, src, tgt=None, hint=None, *, target_parts=None):
         ids = [self.sid["<bos>"], self.sid["<" + task + ">"]] + self.encode(src)
         if hint:
             ids += [self.sid["<hint>"]] + self.encode(hint)
         ids += [self.sid["<sep>"]]
         mask = [0] * len(ids)
+        if target_parts is not None and "".join(target_parts) != tgt:
+            raise ValueError("Target parts must concatenate to the target text")
         if tgt is not None:
             target = []
-            alternatives = tgt.split(" <alt> ") if task == "rebus" else [tgt]
-            for index, alternative in enumerate(alternatives):
-                if index:
-                    target.append(self.sid["<alt>"])
-                target.extend(self.encode(alternative))
+            if target_parts is not None:
+                for part in target_parts:
+                    target.extend(self.encode(part))
+            else:
+                alternatives = tgt.split(" <alt> ") if task == "rebus" else [tgt]
+                for index, alternative in enumerate(alternatives):
+                    if index:
+                        target.append(self.sid["<alt>"])
+                    target.extend(self.encode(alternative))
             target.append(self.sid["<eos>"])
             ids.extend(target)
             mask.extend([1] * len(target))

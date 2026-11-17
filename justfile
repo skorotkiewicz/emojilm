@@ -14,8 +14,14 @@ data *args:
 data-full cldr="data/raw/cldr_en.json" t2e="data/raw/text2emoji.jsonl":
     "{{python}}" -m emojilm.corpora --fetch-missing --cldr {{quote(cldr)}} --t2e {{quote(t2e)}}
 
+data-composition:
+    "{{python}}" -m emojilm.corpora --fetch-missing --composition --data data/composition
+
 train *args:
     "{{python}}" -m emojilm.train {{args}}
+
+train-composition *args:
+    "{{python}}" -m emojilm.train --data data/composition --out ckpt/composition --composition-val data/composition/composition-val.jsonl --steps 12000 {{args}}
 
 smoke:
     "{{python}}" -m emojilm.train --device cpu --threads 2 --steps 8 --batch 4 --eval-every 8 --out ckpt/smoke
