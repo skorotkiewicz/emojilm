@@ -17,11 +17,17 @@ data-full cldr="data/raw/cldr_en.json" t2e="data/raw/text2emoji.jsonl":
 data-composition:
     "{{python}}" -m emojilm.corpora --fetch-missing --composition --data data/composition
 
+data-tinystories *args:
+    "{{python}}" -m emojilm.story_data {{args}}
+
 train *args:
     "{{python}}" -m emojilm.train {{args}}
 
 train-composition *args:
     "{{python}}" -m emojilm.train --data data/composition --out ckpt/composition --composition-val data/composition/composition-val.jsonl --steps 12000 {{args}}
+
+train-tinystories *args:
+    "{{python}}" -m emojilm.train --data data/tinystories --out ckpt/tinystories --composition-val data/tinystories/composition-val.jsonl --steps 12000 {{args}}
 
 smoke:
     "{{python}}" -m emojilm.train --device cpu --threads 2 --steps 8 --batch 4 --eval-every 8 --out ckpt/smoke

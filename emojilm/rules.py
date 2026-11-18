@@ -84,6 +84,12 @@ def decode_preserves_text(source, candidate, symbols):
         + ")"
     )
     literals = re.split(rf"{emoji}(?:\s*{emoji})*", source)
+    return preserves_literals(literals, candidate)
+
+
+def preserves_literals(literals, candidate):
+    if len(literals) == 1:
+        return candidate == literals[0]
     if not candidate.startswith(literals[0]) or not candidate.endswith(literals[-1]):
         return False
     start, end = len(literals[0]), len(candidate) - len(literals[-1])

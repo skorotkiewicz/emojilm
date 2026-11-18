@@ -64,6 +64,32 @@ checkpoint directory. For a composition run, the log is
 tail -f ckpt/composition/train.log
 ```
 
+## Train with TinyStories contexts
+
+After preparing `data/composition`, build an experiment with up to 5,000
+additional encode and decode examples. Each pair uses known emoji readings
+and keeps the surrounding sentence intact. The builder downloads the small
+TinyStories validation file on first use. [TinyStories dataset](https://huggingface.co/datasets/roneneldan/TinyStories)
+
+```sh
+just data-tinystories
+just train-tinystories --device cuda
+```
+
+The recipe uses the same 12,000-step budget and saves to
+`ckpt/tinystories/model.pt`. If you already have the TinyStories file, pass
+its path with `just data-tinystories --stories PATH`.
+
+```sh
+just eval --engine model --copy-metrics --data data/tinystories/context-val.jsonl --ckpt ckpt/tinystories/model.pt
+just eval --engine model --data data/composition/holdout.jsonl --ckpt ckpt/tinystories/model.pt
+```
+
+Run the same evaluations with `--ckpt ckpt/composition/model.pt` for the
+baseline. On the held-out story sentences, `preserved_text` measures how
+often the model copies the text outside emoji or bracketed spans. `exact`
+also requires the expected translation.
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses
