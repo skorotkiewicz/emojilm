@@ -1,4 +1,4 @@
-"""Build paired emoji edits from short TinyStories contexts."""
+"""Build paired emoji edits from TinyStories contexts."""
 
 import argparse
 from collections import defaultdict
@@ -27,6 +27,7 @@ STORIES_SHA256 = "6874bae9a4c1a4e7edcf0e53b86c17817e9cf881fc75ff2368da457b80c058
 STORY_SEPARATOR = "<|endoftext|>"
 SENTENCE_BREAK = re.compile(r'(?<=[.!?])\s+|(?<=[.!?]")\s+|(?<=[.!?]”)\s+')
 BARE_LABEL = re.compile(r"[a-z]+(?: [a-z]+)*")
+LITERAL_WORD = re.compile(r"\b[a-z]{5,}\b")
 
 
 def cache_verified_stories(source, destination):
@@ -83,28 +84,58 @@ def known_mappings(rows):
     return mappings
 
 
-def story_pair(sentence, matches, mappings, story_id):
-    emoji_parts, marker_parts, offset = [], [], 0
-    for match in matches:
-        unchanged = sentence[offset : match.start()]
-        emoji, markers = mappings[match[0]]
+def story_pair(sentence, matches, mappings, story_id, *, long=False, literal=None):
+    edits = [(m.start(), m.end(), *mappings[m[0]], m[0]) for m in matches]
+    if literal is not None:
+        marked = f"[{literal[0]}]"
+        edits.append((literal.start(), literal.end(), marked, marked, marked))
+    emoji_parts, marker_parts, decoded_parts, offset = [], [], [], 0
+    for start, end, emoji, markers, word in sorted(edits):
+        unchanged = sentence[offset:start]
         emoji_parts.extend((unchanged, emoji))
         marker_parts.extend((unchanged, markers))
-        offset = match.end()
+        decoded_parts.extend((unchanged, word))
+        offset = end
     emoji_parts.append(sentence[offset:])
     marker_parts.append(sentence[offset:])
-    encoded = "".join(emoji_parts)
-    marked = "".join(marker_parts)
-    metadata = {"tag": "tinystories", "story_id": story_id}
+    decoded_parts.append(sentence[offset:])
+    encoded, marked, decoded = map("".join, (emoji_parts, marker_parts, decoded_parts))
+    metadata = {
+        "tag": "tinystories-long" if long else "tinystories",
+        "story_id": story_id,
+    }
     return [
-        {"task": "decode", "src": encoded, "tgt": sentence, **metadata},
+        {"task": "decode", "src": encoded, "tgt": decoded, **metadata},
         {"task": "encode", "src": marked, "tgt": encoded, **metadata},
     ]
 
 
+def long_contexts(story):
+    sentences = SENTENCE_BREAK.split(" ".join(story.split()))
+    return [
+        " ".join(sentences[start : start + count])
+        for start in range(len(sentences))
+        for count in range(1, min(3, len(sentences) - start) + 1)
+    ]
+
+
 def sample_pairs(
-    stories, mappings, tok, seen, reserved, train_limit, validation_limit, seed
+    stories,
+    mappings,
+    tok,
+    seen,
+    reserved,
+    train_limit,
+    validation_limit,
+    seed,
+    *,
+    long=False,
+    used_stories=(),
 ):
+    if long:
+        mappings = {
+            word: pair for word, pair in mappings.items() if pair[1].count("[") == 1
+        }
     if not mappings:
         raise ValueError(
             "The base training split has no unambiguous component readings"
@@ -113,7 +144,7 @@ def sample_pairs(
     pattern = re.compile(r"(?<!\w)(?:" + "|".join(map(re.escape, words)) + r")(?!\w)")
     rng = random.Random(seed)
     train, validation = [], []
-    used_stories = set()
+    used_stories = set(used_stories)
     ctx = Config().ctx
     for story in stories:
         if len(train) + 2 > train_limit and len(validation) + 2 > validation_limit:
@@ -131,22 +162,51 @@ def sample_pairs(
         if len(split) + 2 > limit:
             continue
 
-        sentences = SENTENCE_BREAK.split(story)
+        sentences = long_contexts(story) if long else SENTENCE_BREAK.split(story)
         rng.shuffle(sentences)
-        copy = rng.randrange(8) == 0
+        required_spans = None
+        if long:
+            sentences.sort(key=len, reverse=True)
+            if split is validation:
+                required_spans = 2 + len(validation) // 2 % 5
+        copy = not long and rng.randrange(8) == 0
         for sentence in sentences:
             sentence = sentence.strip()
             key = group_key(sentence)
             if (
                 key in seen
-                or not 12 <= len(sentence) <= 180
+                or not (80 if long else 12) <= len(sentence) <= 180
                 or len(sentence.split()) < 3
                 or any(mark in sentence for mark in "[]\n\r")
                 or emojis_in(sentence)
             ):
                 continue
             matches = [] if copy else list(pattern.finditer(sentence))
-            if not copy:
+            literal = None
+            if long:
+                if len(matches) < 2:
+                    continue
+                if required_spans != 2 and rng.randrange(4) == 0:
+                    candidates = [
+                        word
+                        for word in LITERAL_WORD.finditer(sentence)
+                        if word[0] not in mappings
+                        and not any(
+                            m.start() < word.end() and word.start() < m.end()
+                            for m in matches
+                        )
+                    ]
+                    if candidates:
+                        literal = rng.choice(candidates)
+                max_edits = min(6 - (literal is not None), len(matches))
+                if required_spans is None:
+                    count = rng.randint(max(2, max_edits - 1), max_edits)
+                else:
+                    count = required_spans - (literal is not None)
+                    if count > max_edits:
+                        continue
+                matches = rng.sample(matches, count)
+            elif not copy:
                 if not matches:
                     continue
                 first = rng.choice(matches)
@@ -165,8 +225,9 @@ def sample_pairs(
                     if others and rng.random() < 0.5
                     else [first]
                 )
-            matches.sort(key=lambda match: match.start())
-            rows = story_pair(sentence, matches, mappings, story_id)
+            rows = story_pair(
+                sentence, matches, mappings, story_id, long=long, literal=literal
+            )
             if any(
                 reserved(row)
                 or len(tok.build(row["task"], row["src"], row["tgt"])[0]) - 1 > ctx
@@ -183,7 +244,7 @@ def sample_pairs(
 
 
 def build_experiment(
-    base, stories, output, *, train_limit=5000, validation_limit=120, seed=7
+    base, stories, output, *, train_limit=5000, validation_limit=120, seed=7, long=False
 ):
     base, stories, output = Path(base), Path(stories), Path(output)
     if base.resolve() == output.resolve():
@@ -195,9 +256,10 @@ def build_experiment(
     fixed_eval = load_jsonl(base / "holdout.jsonl") + load_jsonl(
         base / "composition-val.jsonl"
     )
+    context_val = load_jsonl(base / "context-val.jsonl") if long else []
     seen = {
         group_key(row[field])
-        for row in chain(base_rows, base_val, fixed_eval)
+        for row in chain(base_rows, base_val, fixed_eval, context_val)
         for field in ("src", "tgt")
     }
     additions, validation = sample_pairs(
@@ -209,6 +271,10 @@ def build_experiment(
         train_limit,
         validation_limit,
         seed,
+        long=long,
+        used_stories=(
+            r["story_id"] for r in chain(base_rows, context_val) if "story_id" in r
+        ),
     )
     if any(
         not any(row["src"] != row["tgt"] for row in split)
@@ -217,8 +283,11 @@ def build_experiment(
         raise ValueError(
             "The story file yielded too few matching stories for both splits"
         )
+    if long and len(validation) < validation_limit - 1:
+        raise ValueError("Too few stories to fill the long-context holdout")
 
     output.mkdir(parents=True, exist_ok=True)
+    evaluation = "long-val.jsonl" if long else "context-val.jsonl"
     with tempfile.TemporaryDirectory(dir=output) as directory:
         staged = Path(directory)
         for filename in (
@@ -228,9 +297,11 @@ def build_experiment(
             "holdout.jsonl",
         ):
             shutil.copyfile(base / filename, staged / filename)
+        if long:
+            shutil.copyfile(base / "context-val.jsonl", staged / "context-val.jsonl")
         for filename, rows in (
             ("train.jsonl", chain(base_rows, additions)),
-            ("context-val.jsonl", validation),
+            (evaluation, validation),
         ):
             with (staged / filename).open("w", encoding="utf-8") as stream:
                 for row in rows:
@@ -242,15 +313,25 @@ def build_experiment(
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", type=Path, default=Path("data/composition"))
-    parser.add_argument("--out", type=Path, default=Path("data/tinystories"))
+    parser.add_argument("--base", type=Path)
+    parser.add_argument("--out", type=Path)
+    parser.add_argument(
+        "--long", action="store_true", help="Add edits in longer contexts"
+    )
     parser.add_argument("--stories", type=Path, default=DEFAULT_STORIES)
     parser.add_argument("--train-limit", type=int, default=5000)
     parser.add_argument("--validation-limit", type=int, default=120)
     parser.add_argument("--seed", type=int, default=7)
     args = parser.parse_args()
+    args.base = args.base or Path(
+        "data/tinystories" if args.long else "data/composition"
+    )
+    args.out = args.out or Path(
+        "data/tinystories-long" if args.long else "data/tinystories"
+    )
     if not (args.base / "train.jsonl").is_file():
-        parser.error("Build the base composition data first with just data-composition")
+        recipe = "data-tinystories" if args.long else "data-composition"
+        parser.error(f"Build the base data first with just {recipe}")
     try:
         if args.stories == DEFAULT_STORIES:
             fetch_source(STORIES_URL, args.stories, convert=cache_verified_stories)
@@ -261,10 +342,12 @@ def main():
             train_limit=args.train_limit,
             validation_limit=args.validation_limit,
             seed=args.seed,
+            long=args.long,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))
-    print(f"TinyStories train={train} context_val={validation} -> {args.out}")
+    name = "TinyStories long contexts" if args.long else "TinyStories"
+    print(f"{name} train={train} context_val={validation} -> {args.out}")
 
 
 if __name__ == "__main__":

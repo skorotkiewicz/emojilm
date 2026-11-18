@@ -8,5 +8,6 @@ __pycache__/
 /data/tokenizer.json
 /data/composition/
 /data/tinystories/
+/data/tinystories-long/
 /ckpt/
 .data-build

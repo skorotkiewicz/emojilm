@@ -70,6 +70,48 @@ class StoryDataTests(unittest.TestCase):
                     (base / filename).read_bytes(), (output / filename).read_bytes()
                 )
 
+            from emojilm.composition import bracket_words
+
+            long_output = root / "long"
+            source.write_text(
+                "\n<|endoftext|>\n".join(
+                    f"At door {i}, the cat greeted the dog and the cat watched another dog. "
+                    "A cat and a dog quietly waited outside."
+                    for i in range(300)
+                ),
+                encoding="utf-8",
+            )
+            build_experiment(
+                output,
+                source,
+                long_output,
+                long=True,
+                train_limit=48,
+                validation_limit=12,
+            )
+            long_rows = load_jsonl(long_output / "train.jsonl")
+            long_validation = load_jsonl(long_output / "long-val.jsonl")
+            self.assertEqual(long_rows[: len(train)], train)
+            self.assertEqual(
+                (len(long_rows) - len(train), len(long_validation)), (48, 12)
+            )
+            self.assertEqual(
+                (output / "context-val.jsonl").read_bytes(),
+                (long_output / "context-val.jsonl").read_bytes(),
+            )
+            long_encode = [
+                row for row in long_rows[len(train) :] if row["task"] == "encode"
+            ]
+            self.assertTrue(
+                any(len(list(bracket_words(r["src"]))) == 6 for r in long_encode)
+            )
+            self.assertTrue(any("[" in row["tgt"] for row in long_encode))
+            self.assertTrue(
+                {r["story_id"] for r in long_rows if "story_id" in r}.isdisjoint(
+                    {r["story_id"] for r in validation + long_validation}
+                )
+            )
+
     def test_copy_metric_distinguishes_replacement_from_surrounding_text(self):
         from emojilm.eval import preserves_surrounding_text
 

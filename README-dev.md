@@ -90,6 +90,19 @@ baseline. On the held-out story sentences, `preserved_text` measures how
 often the model copies the text outside emoji or bracketed spans. `exact`
 also requires the expected translation.
 
+To test longer inputs, build on the prepared `data/tinystories`. This adds up
+to 5,000 training rows with two to six marked spans and some bracketed words
+that should be copied. The long-context holdout uses separate stories.
+
+```sh
+just data-tinystories-long
+just train-tinystories-long --device cuda
+just eval --engine model --copy-metrics --max-new-tokens 128 --data data/tinystories-long/long-val.jsonl --ckpt ckpt/tinystories-long/model.pt
+```
+
+Run the same evaluation with `--ckpt ckpt/tinystories/model.pt` for the
+baseline.
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses

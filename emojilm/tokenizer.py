@@ -170,8 +170,9 @@ def train_bpe(texts, n_merges, min_freq=2):
 
 
 class Tokenizer:
-    def __init__(self, emoji, merges, text_tokens, size=4096):
+    def __init__(self, emoji, merges, text_tokens, size=4096, *, encode_edits=False):
         self.size = size
+        self.encode_edits = encode_edits
         self.specials = list(SPECIALS)
         self.modifiers = list(MODIFIERS)
         self.emoji = list(dict.fromkeys(emoji))
@@ -299,7 +300,13 @@ class Tokenizer:
         return "".join(out)
 
     def build(self, task, src, tgt=None, hint=None, *, target_parts=None):
-        ids = [self.sid["<bos>"], self.sid["<" + task + ">"]] + self.encode(src)
+        if task == "encode-edit":
+            if not self.encode_edits:
+                raise ValueError("This tokenizer has no encode-edit task")
+            prefix = [self.sid["<encode>"], self.sid["<hint>"]]
+        else:
+            prefix = [self.sid["<" + task + ">"]]
+        ids = [self.sid["<bos>"], *prefix, *self.encode(src)]
         if hint:
             ids += [self.sid["<hint>"]] + self.encode(hint)
         ids += [self.sid["<sep>"]]
@@ -329,6 +336,7 @@ class Tokenizer:
             "emoji": self.emoji,
             "merges": [list(merge) for merge in self.merges],
             "text_tokens": self.text_tokens,
+            **({"encode_edits": True} if self.encode_edits else {}),
         }
 
     @classmethod
@@ -337,7 +345,10 @@ class Tokenizer:
             raise ValueError(
                 "Unsupported tokenizer format. Rebuild data with this version."
             )
-        return cls(spec["emoji"], spec["merges"], spec["text_tokens"], spec["size"])
+        return cls(
+            spec["emoji"], spec["merges"], spec["text_tokens"], spec["size"],
+            encode_edits=spec.get("encode_edits", False),
+        )
 
     def save(self, path):
         Path(path).write_text(
