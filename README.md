@@ -34,6 +34,8 @@ just smoke
 
 See the [EmojiLM model page on Hugging Face](https://huggingface.co/Grizzlykw/emojilm).
 
+To run the checkpoint on CPU with a native Rust binary, see the [Rust CLI quick start](rust-cli/README.md).
+
 EmojiLM uses `ckpt/final/model.pt` automatically when it is available. Use `--mode encode` for bracketed text and `--mode decode` for emoji.
 
 ```sh
