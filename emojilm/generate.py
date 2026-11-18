@@ -8,8 +8,11 @@ from .composition import bracket_runs, default_composer
 from .data import emojis_in
 from .rules import LEXICON, apply_rules, decode_preserves_text, load_lexicon
 
+FINAL_CHECKPOINT = Path("ckpt/final/model.pt")
+FALLBACK_CHECKPOINT = Path("ckpt/model.pt")
 
-def encode_marked(source, entries):
+
+def encode_marked(source, entries, *, checkpoint=None, device="cpu", max_new=64):
     pieces = []
     offset = 0
     for start, end, _ in bracket_runs(source):
@@ -20,6 +23,16 @@ def encode_marked(source, entries):
     pieces.append(source[offset:])
     ruled = "".join(pieces)
     engines = ["rules"] if ruled != source else []
+    if "[" in ruled and checkpoint is not None and checkpoint.is_file():
+        from .inference import generate_edits, load
+
+        model, tok = load(checkpoint, device)
+        if tok.encode_edits and model.edit_candidates is not None:
+            edited = generate_edits(model, tok, ruled, max_new)
+            if edited != ruled:
+                engines.append("model-edit")
+            return edited, "+".join(engines) or "copy"
+
     composed = default_composer(partial_encode=True).translate("encode", ruled)
     if composed is not None:
         engines.append("compose")
@@ -37,7 +50,9 @@ def main():
         choices=["auto", "rules", "compose", "model", "model-compose", "model-edit"],
         default="auto",
     )
-    parser.add_argument("--ckpt", type=Path, default=Path("ckpt/model.pt"))
+    parser.add_argument(
+        "--ckpt", type=Path, help="Defaults to ckpt/final/model.pt when present"
+    )
     parser.add_argument("--lexicon", type=Path, default=LEXICON)
     parser.add_argument("--device", default="cpu")
     parser.add_argument(
@@ -45,6 +60,10 @@ def main():
     )
     parser.add_argument("--max-new-tokens", type=int, default=64)
     args = parser.parse_args()
+    if args.ckpt is None:
+        args.ckpt = (
+            FINAL_CHECKPOINT if FINAL_CHECKPOINT.is_file() else FALLBACK_CHECKPOINT
+        )
     if args.max_new_tokens < 1:
         parser.error("--max-new-tokens must be positive")
     if args.engine in {"rules", "compose", "model-compose"} and args.mode == "emojify":
@@ -60,7 +79,13 @@ def main():
         if args.engine in {"auto", "rules"} and args.mode != "emojify":
             entries = load_lexicon(args.lexicon)
             if args.engine == "auto" and args.mode == "encode" and "[" in args.text:
-                result, engine = encode_marked(args.text, entries)
+                result, engine = encode_marked(
+                    args.text,
+                    entries,
+                    checkpoint=args.ckpt if args.hints is None else None,
+                    device=args.device,
+                    max_new=args.max_new_tokens,
+                )
                 print(f"engine={engine}", file=sys.stderr)
                 print(result)
                 return
@@ -106,7 +131,19 @@ def main():
         )
 
         model, tok = load(args.ckpt, args.device)
-        if args.engine == "model-edit":
+        auto_edit = (
+            args.engine == "auto"
+            and args.hints is None
+            and (
+                (args.mode == "decode" and model.decode_readings is not None)
+                or (
+                    args.mode == "encode"
+                    and tok.encode_edits
+                    and model.edit_candidates is not None
+                )
+            )
+        )
+        if args.engine == "model-edit" or auto_edit:
             if args.mode == "encode":
                 result = generate_edits(model, tok, args.text, args.max_new_tokens)
             else:

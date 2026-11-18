@@ -9,11 +9,8 @@ import torch
 
 from .data import load_jsonl
 from .corpora import canonical
-from .edits import EDIT_TASK, KEEP, edit_label, is_emoji_replacement
+from .edits import EDIT_ALIASES, EDIT_TASK, KEEP, edit_label, is_emoji_replacement
 from .tokenizer import Tokenizer
-
-# CLDR includes “eat” among the keywords for fork and knife with plate.
-ENCODE_ALIASES = {"eat": "🍽️"}
 
 
 def edit_bundle_metadata(rows):
@@ -32,8 +29,9 @@ def edit_bundle_metadata(rows):
             readings[label].add(target)
     if not readings:
         raise ValueError("The training split contains no bracket replacements")
-    for label, glyph in ENCODE_ALIASES.items():
+    for label, (glyph, reading) in EDIT_ALIASES.items():
         readings.setdefault(label, {glyph})
+        rebuses.setdefault(canonical(glyph), Counter({reading: 1}))
 
     return {
         "edit_candidates": {

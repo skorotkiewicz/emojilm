@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -78,7 +79,7 @@ class EncodeEditTests(unittest.TestCase):
             directory = Path(directory)
             source, bundled, data = (
                 directory / name
-                for name in ("original.pt", "bundled.pt", "train.jsonl")
+                for name in ("original.pt", "ckpt/final/model.pt", "train.jsonl")
             )
             tok = Tokenizer.train([row["src"]], ["🐱"])
             tok.encode_edits = True
@@ -105,7 +106,7 @@ class EncodeEditTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            self.assertEqual(bundle_checkpoint(source, data, bundled), 3)
+            self.assertEqual(bundle_checkpoint(source, data, bundled), 4)
             self.assertNotIn("edit_candidates", torch.load(source, weights_only=True))
             model, tokenizer = load(bundled)
             self.assertTrue(
@@ -140,6 +141,29 @@ class EncodeEditTests(unittest.TestCase):
             )
             self.assertEqual(decoded.returncode, 0, decoded.stderr)
             self.assertEqual(decoded.stdout, "  I sheep this pie. believe! 🦄\n")
+            project = Path(__file__).resolve().parents[1]
+            for mode, text, expected in (
+                ("encode", "I [think] and [cat].", "I 🤔 and 🐱."),
+                ("decode", "I 🐑 this 🥧.", "I sheep this pie."),
+            ):
+                with self.subTest(mode=mode):
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            "-m",
+                            "emojilm.generate",
+                            "--mode",
+                            mode,
+                            "--text",
+                            text,
+                        ],
+                        cwd=directory,
+                        env={**os.environ, "PYTHONPATH": str(project)},
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout, expected + "\n")
 
     def test_expands_rare_readings_and_uses_only_training_compounds(self):
         from emojilm.corpora import group_key, reserved_filter

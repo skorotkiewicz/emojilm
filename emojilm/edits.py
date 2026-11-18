@@ -10,6 +10,11 @@ from .tokenizer import emoji_at
 
 EDIT_TASK = "encode-edit"
 KEEP = "KEEP"
+# Short forms for CLDR readings used in bracketed text.
+EDIT_ALIASES = {
+    "eat": ("🍽️", "fork and knife with plate"),
+    "think": ("🤔", "thinking face"),
+}
 SEAL_OBJECT = re.compile(
     r"[ \t]+(?:up[ \t]+)?"
     r"(?:(?:the|an?|my|your|his|her|its|our|their|this|that|these|those)[ \t]+"

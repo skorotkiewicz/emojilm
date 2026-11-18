@@ -8,6 +8,7 @@ from .composition import Composer
 from .config import Config
 from .corpora import canonical
 from .edits import (
+    EDIT_ALIASES,
     EDIT_TASK,
     KEEP,
     apply_edits,
@@ -105,8 +106,11 @@ def generate_edits(model, tok, source, max_new=16):
 
     def predict(focused):
         if candidates is not None:
-            choices = candidates.get(edit_label(focused), ())
-            return choose_edit(model, tok, focused, choices, limit)
+            label = edit_label(focused)
+            if label in candidates:
+                return choose_edit(model, tok, focused, candidates[label], limit)
+            alias = EDIT_ALIASES.get(label)
+            return alias[0] if alias else None
         prompt, _ = tok.build(EDIT_TASK, focused)
         if len(prompt) > model.cfg.ctx:
             return None
@@ -131,7 +135,10 @@ def generate_edits(model, tok, source, max_new=16):
 def edit_decoder(model, tok, max_new=64):
     readings = getattr(model, "decode_readings", None)
     if readings is not None:
-        return Composer(readings, prefer_known_runs=True)
+        aliases = {
+            canonical(glyph): [reading] for glyph, reading in EDIT_ALIASES.values()
+        }
+        return Composer(aliases | readings, prefer_known_runs=True)
     return NeuralComposer(model, tok, max_new)
 
 

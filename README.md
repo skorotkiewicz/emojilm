@@ -28,18 +28,16 @@ just smoke
 
 ## Use the final model
 
-With the checkpoint at `ckpt/final/model.pt`, use `model-edit` to translate emoji or bracketed text in place.
+EmojiLM uses `ckpt/final/model.pt` automatically when it is available. Use `--mode encode` for bracketed text and `--mode decode` for emoji.
 
 ```sh
-.venv/bin/python -m emojilm.generate --engine model-edit \
-  --ckpt ckpt/final/model.pt --text 'A 🧈🪰 landed on her hand.'
+.venv/bin/python -m emojilm.generate --mode decode --text 'A 🧈🪰 landed on her hand.'
 ```
 
 Use `emojify` to turn a sentence into an emoji summary.
 
 ```sh
-.venv/bin/python -m emojilm.generate --mode emojify --text 'I love pizza and my dog' \
-  --ckpt ckpt/final/model.pt
+.venv/bin/python -m emojilm.generate --mode emojify --text 'I love pizza and my dog'
 ```
 
 ## Train the final model
