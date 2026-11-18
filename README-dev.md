@@ -139,6 +139,15 @@ The run uses the same 12,000 steps and saves to
 `ckpt/encode-edits-expanded/model.pt`. Use the same evaluation commands with
 that checkpoint to compare it against `ckpt/encode-edits/model.pt`.
 
+After training, bundle the supported readings from the training split into a
+portable checkpoint. `model-edit` uses a single supported reading directly,
+uses the model to choose among several readings, and copies unfamiliar brackets.
+
+```sh
+just bundle-encode-edits
+.venv/bin/python -m emojilm.generate --engine model-edit --ckpt ckpt/encode-edits-bundled/model.pt --mode encode --text 'I baked an [apple] [pie].'
+```
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses

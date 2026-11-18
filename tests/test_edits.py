@@ -1,7 +1,65 @@
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 
 class EncodeEditTests(unittest.TestCase):
+    def test_bundles_training_readings_without_changing_model_weights(self):
+        import torch
+
+        from emojilm.config import Config
+        from emojilm.edit_candidates import bundle_checkpoint
+        from emojilm.edits import edit_rows
+        from emojilm.inference import generate_edits, load
+        from emojilm.model import EmojiLM
+        from emojilm.tokenizer import Tokenizer
+
+        row = {
+            "task": "encode",
+            "src": "Use [cat] and [friend].",
+            "tgt": "Use 🐱 and [friend].",
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            source, bundled, data = (
+                directory / name
+                for name in ("original.pt", "bundled.pt", "train.jsonl")
+            )
+            tok = Tokenizer.train([row["src"]], ["🐱"])
+            tok.encode_edits = True
+            cfg = Config(vocab=tok.size, ctx=32, layers=1, dim=16, heads=4, ffn=32)
+            weights = EmojiLM(cfg).state_dict()
+            torch.save(
+                {
+                    "format": "emojilm-1",
+                    "cfg": cfg.to_dict(),
+                    "tokenizer": tok.to_dict(),
+                    "model": weights,
+                },
+                source,
+            )
+            data.write_text(
+                "".join(json.dumps(edit) + "\n" for edit in edit_rows(row)),
+                encoding="utf-8",
+            )
+
+            self.assertEqual(bundle_checkpoint(source, data, bundled), 2)
+            self.assertNotIn("edit_candidates", torch.load(source, weights_only=True))
+            model, tokenizer = load(bundled)
+            self.assertTrue(
+                all(
+                    torch.equal(tensor, model.state_dict()[name])
+                    for name, tensor in weights.items()
+                )
+            )
+            self.assertEqual(
+                generate_edits(
+                    model, tokenizer, "  GPT [CAT]  [friend] and [unregistered].\n"
+                ),
+                "  GPT 🐱  [friend] and [unregistered].\n",
+            )
+
     def test_expands_rare_readings_and_uses_only_training_compounds(self):
         from emojilm.corpora import group_key, reserved_filter
         from emojilm.edit_coverage import coverage_rows

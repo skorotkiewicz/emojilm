@@ -47,6 +47,9 @@ train-encode-edits *args:
 train-encode-edits-expanded *args:
     "{{python}}" -m emojilm.train --data data/encode-edits-expanded --out ckpt/encode-edits-expanded --composition-val data/encode-edits-expanded/edit-val.jsonl --steps 12000 {{args}}
 
+bundle-encode-edits *args:
+    "{{python}}" -m emojilm.edit_candidates {{args}}
+
 smoke:
     "{{python}}" -m emojilm.train --device cpu --threads 2 --steps 8 --batch 4 --eval-every 8 --out ckpt/smoke
     "{{python}}" -m emojilm.generate --engine model --ckpt ckpt/smoke/model.pt --text '🍑⛳' --max-new-tokens 4

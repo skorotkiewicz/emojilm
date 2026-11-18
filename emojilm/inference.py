@@ -7,7 +7,7 @@ import torch
 from .composition import Composer
 from .config import Config
 from .corpora import canonical
-from .edits import EDIT_TASK, apply_edits
+from .edits import EDIT_TASK, apply_edits, edit_label
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
@@ -22,6 +22,7 @@ def load(path, device="cpu"):
         raise ValueError("Checkpoint model and tokenizer vocabulary sizes differ")
     model = EmojiLM(cfg)
     model.load_state_dict(checkpoint["model"])
+    model.edit_candidates = checkpoint.get("edit_candidates")
     model.to(device).eval()
     return model, tok
 
@@ -64,16 +65,45 @@ def generate(model, tok, task, source, hint=None, max_new=64, *, require_eos=Fal
     return list(dict.fromkeys(answer for answer in answers if answer))
 
 
+@torch.inference_mode()
+def choose_edit(model, tok, focused, choices, max_new):
+    if len(choices) <= 1:
+        return next(iter(choices), None)
+
+    prefix, _ = tok.build(EDIT_TASK, focused)
+    limit = min(max_new, model.cfg.ctx - len(prefix) + 1)
+    eos = tok.sid["<eos>"]
+    device = model.tok_emb.weight.device
+    best_value, best_score = None, -math.inf
+    for value in choices:
+        target = [*tok.encode(value), eos]
+        if len(target) > limit:
+            continue
+        inputs = torch.tensor([prefix + target[:-1]], device=device)
+        target_ids = torch.tensor(target, device=device).unsqueeze(-1)
+        logits = model(inputs)[0, len(prefix) - 1 :]
+        score = float(logits.float().log_softmax(-1).gather(-1, target_ids).sum())
+        if score > best_score:
+            best_value, best_score = value, score
+    return best_value
+
+
 def generate_edits(model, tok, source, max_new=16):
     if not tok.encode_edits:
         raise ValueError("Use a checkpoint trained with the encode edits dataset")
 
+    candidates = getattr(model, "edit_candidates", None)
+    limit = min(max_new, 16)
+
     def predict(focused):
+        if candidates is not None:
+            choices = candidates.get(edit_label(focused), ())
+            return choose_edit(model, tok, focused, choices, limit)
         prompt, _ = tok.build(EDIT_TASK, focused)
         if len(prompt) > model.cfg.ctx:
             return None
         answers = generate(
-            model, tok, EDIT_TASK, focused, max_new=min(max_new, 16), require_eos=True
+            model, tok, EDIT_TASK, focused, max_new=limit, require_eos=True
         )
         return answers[0] if answers else None
 

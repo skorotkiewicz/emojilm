@@ -12,7 +12,7 @@ from .composition import bracket_words
 from .config import Config
 from .corpora import canonical, group_key, reserved_filter
 from .data import load_jsonl
-from .edits import EDIT_TASK, KEEP, aligned_replacements, edit_rows
+from .edits import EDIT_TASK, KEEP, aligned_replacements, edit_label, edit_rows
 from .story_data import known_mappings
 from .tokenizer import Tokenizer
 
@@ -81,8 +81,7 @@ def coverage_rows(rows, edits, excluded, reserved):
     known_labels, kept_labels = set(), set()
     seen = {group_key(edit["src"]) for edit in edits}
     for edit in edits:
-        focus = edit["src"].rsplit("\n", 1)[-1]
-        label = canonical(focus.partition(" ")[2][1:-1])
+        label = edit_label(edit["src"])
         counts[label, canonical(edit["tgt"])] += 1
         (kept_labels if edit["tgt"] == KEEP else known_labels).add(label)
 

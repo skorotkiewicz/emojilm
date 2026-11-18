@@ -3,6 +3,7 @@
 from functools import cache
 
 from .composition import bracket_words
+from .corpora import canonical
 from .data import emojis_in
 from .tokenizer import emoji_at
 
@@ -12,6 +13,15 @@ KEEP = "KEEP"
 
 def edit_prompt(source, index, word):
     return f"{source}\n{index + 1} [{word}]"
+
+
+def edit_label(prompt):
+    marker = prompt.rsplit("\n", 1)[-1].partition(" ")[2]
+    return canonical(marker[1:-1])
+
+
+def is_emoji_replacement(value):
+    return bool(value and "".join(emojis_in(value)) == value)
 
 
 def aligned_replacements(source, target, spans, *, allow_joined=False):
@@ -69,7 +79,7 @@ def apply_edits(source, predict):
     for index, (start, end, word) in enumerate(bracket_words(source)):
         value = predict(edit_prompt(source, index, word))
         pieces.append(source[offset:start])
-        if value and "".join(emojis_in(value)) == value:
+        if is_emoji_replacement(value):
             pieces.append(value)
         else:
             pieces.append(source[start:end])
