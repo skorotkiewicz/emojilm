@@ -7,7 +7,14 @@ import torch
 from .composition import Composer
 from .config import Config
 from .corpora import canonical
-from .edits import EDIT_TASK, apply_edits, edit_label
+from .edits import (
+    EDIT_TASK,
+    KEEP,
+    apply_edits,
+    contextual_label,
+    edit_label,
+    keep_seal_verb,
+)
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
@@ -108,7 +115,17 @@ def generate_edits(model, tok, source, max_new=16):
         )
         return answers[0] if answers else None
 
-    return apply_edits(source, predict)
+    if candidates is None:
+        return apply_edits(source, predict)
+
+    animal_only_seal = set(candidates.get("seal", ())) - {KEEP} == {"🦭"}
+
+    def label_for(start, end, word):
+        if animal_only_seal and keep_seal_verb(source, start, end, word):
+            return None
+        return contextual_label(source, start, end, word)
+
+    return apply_edits(source, predict, label_for=label_for)
 
 
 def edit_decoder(model, tok, max_new=64):

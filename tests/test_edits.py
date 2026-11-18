@@ -3,10 +3,62 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 
 
 class EncodeEditTests(unittest.TestCase):
+    def test_distinguishes_mouse_and_bat_from_their_animal_readings(self):
+        from emojilm.inference import generate_edits
+
+        model = SimpleNamespace(
+            edit_candidates={
+                "mouse": ["🐁"],
+                "computer mouse": ["🖱"],
+                "bat": ["🦇"],
+            }
+        )
+        tokenizer = SimpleNamespace(encode_edits=True)
+        for sentence, expected in (
+            (
+                "Click the left button on your [mouse].",
+                "Click the left button on your 🖱.",
+            ),
+            (
+                "Use a wireless [mouse], then draw a [mouse].",
+                "Use a wireless 🖱, then draw a 🐁.",
+            ),
+            ("Click a photo of a [mouse].", "Click a photo of a 🐁."),
+            (
+                "She swung the [bat] and hit the ball.",
+                "She swung the [bat] and hit the ball.",
+            ),
+            (
+                "She swung at the [bat] with a broom.",
+                "She swung at the 🦇 with a broom.",
+            ),
+            ("A [bat] flew out of the cave.", "A 🦇 flew out of the cave."),
+        ):
+            with self.subTest(sentence=sentence):
+                self.assertEqual(generate_edits(model, tokenizer, sentence), expected)
+
+    def test_keeps_seal_as_a_verb_and_encodes_the_animal(self):
+        from emojilm.inference import generate_edits
+
+        model = SimpleNamespace(edit_candidates={"seal": ["🦭"]})
+        tokenizer = SimpleNamespace(encode_edits=True)
+        for sentence, expected in (
+            ("Please [seal] the envelope.", "Please [seal] the envelope."),
+            (
+                "We [seal] the padded envelope and saw a [seal] near the harbor.",
+                "We [seal] the padded envelope and saw a 🦭 near the harbor.",
+            ),
+            ("They [SEAL] the jars tightly.", "They [SEAL] the jars tightly."),
+            ("There was a [seal] on the beach.", "There was a 🦭 on the beach."),
+        ):
+            with self.subTest(sentence=sentence):
+                self.assertEqual(generate_edits(model, tokenizer, sentence), expected)
+
     def test_bundles_training_readings_without_changing_model_weights(self):
         import torch
 
