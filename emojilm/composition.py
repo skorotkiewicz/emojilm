@@ -53,10 +53,18 @@ def compact_emoji_runs(text):
 
 
 class Composer:
-    def __init__(self, readings, known_combinations=(), *, partial_encode=False):
+    def __init__(
+        self,
+        readings,
+        known_combinations=(),
+        *,
+        partial_encode=False,
+        prefer_known_runs=False,
+    ):
         self.readings = {}
         self.symbols = {}
         self.partial_encode = partial_encode
+        self.prefer_known_runs = prefer_known_runs
         self.known_combinations = {canonical(emoji) for emoji in known_combinations}
         priorities = {}
         for emoji, words in readings.items():
@@ -73,6 +81,17 @@ class Composer:
 
     def write_component(self, word):
         return self.symbols.get(canonical(word))
+
+    def read_run(self, parts):
+        if self.prefer_known_runs and len(parts) > 1:
+            known = self.read_component("".join(parts))
+            if known:
+                return known
+        replacements = [self.read_component(emoji) for emoji in parts]
+        if not all(replacements):
+            return None
+        separator = "" if all(word.isalpha() for word in replacements) else " "
+        return separator.join(replacements)
 
     def render_encode_run(self, source, replacements):
         if all(replacements):
@@ -103,26 +122,21 @@ class Composer:
             original = source[start:end]
             if task == "encode":
                 replacements = [self.write_component(word) for word in parts]
+                if automatic and not all(replacements):
+                    return None
+                replacement = self.render_encode_run(original, replacements)
             else:
                 if automatic and (
                     len(parts) < 2 or canonical(original) in self.known_combinations
                 ):
                     return None
-                replacements = [self.read_component(emoji) for emoji in parts]
                 # Adjacent symbols form a compound. Explicit separators
                 # stay in the source, and multiword readings need spaces.
-                separator = (
-                    "" if all(word and word.isalpha() for word in replacements) else " "
-                )
-            if automatic and not all(replacements):
-                return None
+                replacement = self.read_run(parts)
+                if automatic and replacement is None:
+                    return None
             pieces.append(source[offset:start])
-            if task == "encode":
-                pieces.append(self.render_encode_run(original, replacements))
-            else:
-                pieces.append(
-                    separator.join(replacements) if all(replacements) else original
-                )
+            pieces.append(replacement if replacement is not None else original)
             offset = end
         pieces.append(source[offset:])
         candidate = "".join(pieces)

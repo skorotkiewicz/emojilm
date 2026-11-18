@@ -50,18 +50,22 @@ def report(rows, predict, engine, *, hints=False, copy_metrics=False):
 def evaluate_model(rows, args):
     import torch
 
-    from .inference import NeuralComposer, generate, generate_edits, load
+    from .inference import NeuralComposer, edit_decoder, generate, generate_edits, load
 
     if args.threads:
         torch.set_num_threads(args.threads)
     model, tok = load(args.ckpt, args.device)
     if args.engine == "model-edit":
-        supported = [row for row in rows if row["task"] == "encode"]
+        supported = [row for row in rows if row["task"] in {"encode", "decode"}]
         if not supported:
-            raise ValueError("model-edit needs encode prompts")
+            raise ValueError("model-edit needs encode or decode prompts")
+        decoder = edit_decoder(model, tok, args.max_new_tokens)
 
         def predict_edit(row):
-            return [generate_edits(model, tok, row["src"], args.max_new_tokens)]
+            source = row["src"]
+            if row["task"] == "encode":
+                return [generate_edits(model, tok, source, args.max_new_tokens)]
+            return [decoder.translate("decode", source) or source]
 
         report(supported, predict_edit, "model-edit", copy_metrics=args.copy_metrics)
         return

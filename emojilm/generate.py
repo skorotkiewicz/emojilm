@@ -52,9 +52,9 @@ def main():
     if args.engine == "model-compose" and args.hints is not None:
         parser.error("model-compose uses only the checkpoint's component readings")
     if args.engine == "model-edit" and (
-        args.mode != "encode" or args.hints is not None
+        args.mode not in {"encode", "decode"} or args.hints is not None
     ):
-        parser.error("model-edit uses encode mode without hints")
+        parser.error("model-edit uses encode or decode mode without hints")
     symbols = emojis_in(args.text) if args.mode == "decode" else []
     try:
         if args.engine in {"auto", "rules"} and args.mode != "emojify":
@@ -97,11 +97,21 @@ def main():
                 f"Checkpoint not found at {args.ckpt}. Run training first."
             )
 
-        from .inference import NeuralComposer, generate, generate_edits, load
+        from .inference import (
+            NeuralComposer,
+            edit_decoder,
+            generate,
+            generate_edits,
+            load,
+        )
 
         model, tok = load(args.ckpt, args.device)
         if args.engine == "model-edit":
-            result = generate_edits(model, tok, args.text, args.max_new_tokens)
+            if args.mode == "encode":
+                result = generate_edits(model, tok, args.text, args.max_new_tokens)
+            else:
+                decoder = edit_decoder(model, tok, args.max_new_tokens)
+                result = decoder.translate("decode", args.text) or args.text
             print("engine=model-edit", file=sys.stderr)
             print(result)
             return

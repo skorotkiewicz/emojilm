@@ -142,10 +142,13 @@ that checkpoint to compare it against `ckpt/encode-edits/model.pt`.
 After training, bundle the supported readings from the training split into a
 portable checkpoint. `model-edit` uses a single supported reading directly,
 uses the model to choose among several readings, and copies unfamiliar brackets.
+In decode mode the bundle replaces emoji runs with their rebus readings and
+copies the surrounding text.
 
 ```sh
 just bundle-encode-edits
 .venv/bin/python -m emojilm.generate --engine model-edit --ckpt ckpt/encode-edits-bundled/model.pt --mode encode --text 'I baked an [apple] [pie].'
+.venv/bin/python -m emojilm.generate --engine model-edit --ckpt ckpt/encode-edits-bundled/model.pt --mode decode --text 'I baked a 🥧.'
 ```
 
 ## Rebuild the dataset

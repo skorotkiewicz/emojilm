@@ -1,5 +1,7 @@
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -39,12 +41,19 @@ class EncodeEditTests(unittest.TestCase):
                 },
                 source,
             )
+            readings = [
+                {"task": "rebus", "src": "🐑", "tgt": "sheep <alt> ewe"},
+                {"task": "rebus", "src": "🥧", "tgt": "pie"},
+                {"task": "rebus", "src": "🐝🍃", "tgt": "believe"},
+            ]
             data.write_text(
-                "".join(json.dumps(edit) + "\n" for edit in edit_rows(row)),
+                "".join(
+                    json.dumps(edit) + "\n" for edit in [*edit_rows(row), *readings]
+                ),
                 encoding="utf-8",
             )
 
-            self.assertEqual(bundle_checkpoint(source, data, bundled), 2)
+            self.assertEqual(bundle_checkpoint(source, data, bundled), 3)
             self.assertNotIn("edit_candidates", torch.load(source, weights_only=True))
             model, tokenizer = load(bundled)
             self.assertTrue(
@@ -59,6 +68,26 @@ class EncodeEditTests(unittest.TestCase):
                 ),
                 "  GPT 🐱  [friend] and [unregistered].\n",
             )
+            self.assertEqual(generate_edits(model, tokenizer, "I [eat]."), "I 🍽️.")
+            decoded = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "emojilm.generate",
+                    "--engine",
+                    "model-edit",
+                    "--ckpt",
+                    str(bundled),
+                    "--mode",
+                    "decode",
+                    "--text",
+                    "  I 🐑 this 🥧. 🐝🍃! 🦄",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(decoded.returncode, 0, decoded.stderr)
+            self.assertEqual(decoded.stdout, "  I sheep this pie. believe! 🦄\n")
 
     def test_expands_rare_readings_and_uses_only_training_compounds(self):
         from emojilm.corpora import group_key, reserved_filter

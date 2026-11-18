@@ -1,15 +1,19 @@
 """Bundle supported bracket replacements into an existing model-edit checkpoint."""
 
 import argparse
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 import tempfile
 
 import torch
 
 from .data import load_jsonl
+from .corpora import canonical
 from .edits import EDIT_TASK, KEEP, edit_label, is_emoji_replacement
 from .tokenizer import Tokenizer
+
+# CLDR includes “eat” among the keywords for fork and knife with plate.
+ENCODE_ALIASES = {"eat": "🍽️"}
 
 
 def bundle_checkpoint(source, data, output):
@@ -23,7 +27,12 @@ def bundle_checkpoint(source, data, output):
         raise ValueError("Use a checkpoint trained with the encode edits dataset")
 
     readings = defaultdict(set)
+    rebuses = defaultdict(Counter)
     for row in load_jsonl(data):
+        if row["task"] == "rebus" and is_emoji_replacement(row["src"]):
+            primary = row["tgt"].split(" <alt> ", 1)[0].strip()
+            if primary:
+                rebuses[canonical(row["src"])][primary] += 1
         if row["task"] != EDIT_TASK:
             continue
         label = edit_label(row["src"])
@@ -32,9 +41,15 @@ def bundle_checkpoint(source, data, output):
             readings[label].add(target)
     if not readings:
         raise ValueError("The training split contains no bracket replacements")
+    for label, glyph in ENCODE_ALIASES.items():
+        readings.setdefault(label, {glyph})
 
     checkpoint["edit_candidates"] = {
         label: sorted(choices) for label, choices in sorted(readings.items())
+    }
+    checkpoint["decode_readings"] = {
+        glyph: [counts.most_common(1)[0][0]]
+        for glyph, counts in sorted(rebuses.items())
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=output.parent) as directory:

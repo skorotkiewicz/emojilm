@@ -23,6 +23,7 @@ def load(path, device="cpu"):
     model = EmojiLM(cfg)
     model.load_state_dict(checkpoint["model"])
     model.edit_candidates = checkpoint.get("edit_candidates")
+    model.decode_readings = checkpoint.get("decode_readings")
     model.to(device).eval()
     return model, tok
 
@@ -108,6 +109,13 @@ def generate_edits(model, tok, source, max_new=16):
         return answers[0] if answers else None
 
     return apply_edits(source, predict)
+
+
+def edit_decoder(model, tok, max_new=64):
+    readings = getattr(model, "decode_readings", None)
+    if readings is not None:
+        return Composer(readings, prefer_known_runs=True)
+    return NeuralComposer(model, tok, max_new)
 
 
 class NeuralComposer(Composer):
