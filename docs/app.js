@@ -49,11 +49,12 @@ const drafts = {
   rebus: "🐝🍃",
   emojify: examples[4].text,
 };
-let mode = "encode", busy = false, worker, offset = 0;
+const downloadNote = "Downloads the 11.5 MB model and its browser runtime.";
+let mode = "encode", busy = false, ready = false, worker, offset = 0;
 function clearResult() {
   result.textContent = "Your translation will arrive here.";
   copy.disabled = true;
-  status.textContent = "";
+  status.textContent = ready ? "" : downloadNote;
 }
 function changeMode(next, text) {
   drafts[mode] = input.value;
@@ -70,7 +71,7 @@ function lock(value) {
   for (const b of document.querySelectorAll("[data-mode],.card,#random")) {
     b.disabled = value;
   }
-  send.disabled = value || !input.value.trim();
+  send.disabled = value || (ready && !input.value.trim());
   input.readOnly = value;
   $(".delivery").setAttribute("aria-busy", String(value));
 }
@@ -80,12 +81,7 @@ function fail(message) {
   status.textContent = message;
   result.textContent = "Delivery interrupted. Try again.";
 }
-function translate() {
-  if (busy || !input.value.trim()) return;
-  lock(true);
-  copy.disabled = true;
-  result.textContent = "Opening the mail…";
-  status.textContent = "Reading your message…";
+function request(data) {
   try {
     if (!worker) {
       worker = new Worker(new URL("./worker.js", import.meta.url), {
@@ -100,6 +96,13 @@ function translate() {
           fail(data.error);
           return;
         }
+        if (data.ready) {
+          ready = true;
+          $("#send-label").textContent = "Translate";
+          lock(false);
+          status.textContent = "Weights loaded. Ready to translate.";
+          return;
+        }
         lock(false);
         result.textContent = data.result ||
           "The model returned an empty reply.";
@@ -109,15 +112,32 @@ function translate() {
       worker.onerror = () => {
         worker.terminate();
         worker = null;
+        ready = false;
+        $("#send-label").textContent = "Load weights";
         fail(
           "Could not start the translator. Check the local model and runtime files.",
         );
       };
     }
-    worker.postMessage({ mode, text: input.value });
+    worker.postMessage(data);
   } catch (error) {
     fail(error.message);
   }
+}
+function loadWeights() {
+  if (busy || ready) return;
+  lock(true);
+  clearResult();
+  status.textContent = "Loading weights…";
+  request({ type: "load" });
+}
+function translate() {
+  if (!ready || busy || !input.value.trim()) return;
+  lock(true);
+  copy.disabled = true;
+  result.textContent = "Opening the mail…";
+  status.textContent = "Reading your message…";
+  request({ type: "translate", mode, text: input.value });
 }
 function cards() {
   $("#cards").replaceChildren();
@@ -154,7 +174,7 @@ document.querySelectorAll("[data-mode]").forEach((b) =>
     input.focus();
   }
 );
-send.onclick = translate;
+send.onclick = () => ready ? translate() : loadWeights();
 input.oninput = () => {
   clearResult();
   lock(false);
@@ -183,4 +203,3 @@ $("#random").onclick = () => {
 };
 input.value = drafts.encode;
 cards();
-translate();

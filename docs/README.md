@@ -1,6 +1,6 @@
 # Emoji Post Office
 
-A browser playground for EmojiLM. Pick a card from the mailbag or type a message. Encode replaces bracketed words in context, Decode reads emoji and compounds, Rebus tries to sound out emoji puzzles, and Emojify generates an emoji summary. Press Ctrl+Enter or ⌘+Enter to translate.
+A browser playground for EmojiLM. Select **Load weights** to download the model and browser runtime. Once the model is ready, pick a card from the mailbag or type a message and select **Translate**. Encode replaces bracketed words in context, Decode reads emoji and compounds, Rebus tries to sound out emoji puzzles, and Emojify generates an emoji summary. Press Ctrl+Enter or ⌘+Enter to translate.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ Open [localhost:8000](http://localhost:8000). The directory is also ready for st
 
 - `model/model.onnx` is the 11.5 MB export of the noun/verb release. It stores the large weight matrices as 8-bit integers and performs inference in floating point. Its input is `ids` (int64, shape `[1, sequence]`). Its outputs are `hidden` and `logits`. The maximum sequence length is 256.
 - `model/bundle.json` supplies the matching tokenizer, bundled readings and trained classifiers. Deploy it together with its ONNX graph.
-- `vendor/` contains ONNX Runtime Web and its single-threaded WASM backend files. The worker loads the neural model on demand. Bundled dictionary lookups can answer some requests on their own.
+- `vendor/` contains ONNX Runtime Web and its single-threaded WASM backend files. The worker initializes once per page, when you select **Load weights**.
 
 The web translator matched the PyTorch implementation on 197 comparison prompts across the four modes. This measures agreement between implementations. Translation quality scores are on the [model card](https://huggingface.co/Grizzlykw/emojilm).
 

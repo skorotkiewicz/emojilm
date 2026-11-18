@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import * as ort from "../web/vendor/ort.wasm.min.mjs";
-import { Translator } from "../web/translator.js";
+import * as ort from "../docs/vendor/ort.wasm.min.mjs";
+import { Translator } from "../docs/translator.js";
 
 test("the shipped ONNX and browser bundle translate together", async () => {
   ort.env.wasm.numThreads = 1;
-  const path = (name) => new URL("../web/model/" + name, import.meta.url);
+  const path = (name) => new URL("../docs/model/" + name, import.meta.url);
   const session = await ort.InferenceSession.create(
     await readFile(path("model.onnx")),
   );

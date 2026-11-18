@@ -328,7 +328,7 @@ button:disabled {
   font-weight: bold;
   box-shadow: 2px 2px 0 var(--ink);
 }
-.actions button span {
+.actions button span[aria-hidden] {
   padding-left: 14px;
 }
 .actions button:hover {
