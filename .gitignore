@@ -10,5 +10,6 @@ __pycache__/
 /data/tinystories/
 /data/tinystories-long/
 /data/encode-edits/
+/data/encode-edits-expanded/
 /ckpt/
 .data-build

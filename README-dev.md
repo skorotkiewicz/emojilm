@@ -126,6 +126,19 @@ just eval --engine model-edit --copy-metrics --data data/encode-edits/edit-holdo
 `edit-holdout.jsonl` uses the original prompts and keeps spaces between
 brackets in their references. Use those same references for comparisons.
 
+To expand bracket-edit vocabulary, build from the existing `data/encode-edits`.
+The builder supplements rare readings from the training split and pairs
+known compound readings with examples of the same words used separately.
+
+```sh
+just data-encode-edits-expanded
+just train-encode-edits-expanded --device cuda
+```
+
+The run uses the same 12,000 steps and saves to
+`ckpt/encode-edits-expanded/model.pt`. Use the same evaluation commands with
+that checkpoint to compare it against `ckpt/encode-edits/model.pt`.
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses
