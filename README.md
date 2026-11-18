@@ -1,5 +1,9 @@
 # EmojiLM
 
+[![Hugging Face model](https://img.shields.io/badge/Hugging%20Face-Model-FFD21E?style=flat-square&logo=huggingface&logoColor=FFD21E)](https://huggingface.co/Grizzlykw/emojilm)
+![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
+[![MIT License](https://img.shields.io/badge/License-MIT-2EA44F?style=flat-square)](LICENSE)
+
 EmojiLM is a small Python project for translating emoji and text, solving rebuses, and training a local 11.2M-parameter model.
 
 ## Try it
@@ -27,6 +31,8 @@ just smoke
 ```
 
 ## Use the final model
+
+See the [EmojiLM model page on Hugging Face](https://huggingface.co/Grizzlykw/emojilm).
 
 EmojiLM uses `ckpt/final/model.pt` automatically when it is available. Use `--mode encode` for bracketed text and `--mode decode` for emoji.
 
