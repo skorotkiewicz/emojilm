@@ -16,7 +16,8 @@ from tqdm import tqdm
 
 from .config import Config
 from .data import load_jsonl, matches_reference
-from .inference import generate
+from .edits import EDIT_TASK
+from .inference import generate, generate_edits
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
@@ -83,6 +84,9 @@ def validate_composition(model, tok, rows):
     try:
         for row in rows:
             task, source = row["task"], row["src"]
+            if task == "encode" and tok.encode_edits:
+                correct += matches_reference(row, [generate_edits(model, tok, source)])
+                continue
             prompt, _ = tok.build(task, source)
             if len(prompt) <= model.cfg.ctx:
                 answers = generate(model, tok, task, source)
@@ -184,6 +188,10 @@ def main():
         parser.error(str(error))
     if not train or not val:
         parser.error("Training and validation both need rows that fit --ctx")
+    if tok.encode_edits and (EDIT_TASK not in train or EDIT_TASK not in val):
+        parser.error(
+            "Replacement training and validation both need rows that fit --ctx"
+        )
     if args.composition_val and not composition_val:
         parser.error("Composition validation needs at least one prompt")
     if train_skipped or val_skipped:
@@ -210,7 +218,11 @@ def main():
     )
     mixed_precision = device.type == "cuda" and torch.cuda.is_bf16_supported()
     tasks = sorted(train)
-    weights = [TASK_WEIGHTS[task] for task in tasks]
+    task_weights = TASK_WEIGHTS.copy()
+    if EDIT_TASK in train:
+        task_weights[EDIT_TASK] = 20 if "encode" in train else 30
+        task_weights["encode"] -= 20
+    weights = [task_weights[task] for task in tasks]
     warmup = min(args.warmup, max(0, args.steps - 1))
     pad = tok.sid["<pad>"]
 
@@ -289,8 +301,8 @@ def main():
                     raise RuntimeError("Non-finite validation loss")
                 # Use the task mix here too so summary quality cannot dominate checkpoint selection.
                 score = sum(
-                    loss * TASK_WEIGHTS[task] for task, loss in losses.items()
-                ) / sum(TASK_WEIGHTS[task] for task in losses)
+                    loss * task_weights[task] for task, loss in losses.items()
+                ) / sum(task_weights[task] for task in losses)
                 report(
                     f"step={step} validation={score:.4f} "
                     + " ".join(

@@ -14,7 +14,7 @@ def edit_prompt(source, index, word):
     return f"{source}\n{index + 1} [{word}]"
 
 
-def aligned_replacements(source, target, spans):
+def aligned_replacements(source, target, spans, *, allow_joined=False):
     @cache
     def align(index, pos):
         left = spans[index - 1][1] if index else 0
@@ -23,9 +23,10 @@ def aligned_replacements(source, target, spans):
 
         start, end, _ = spans[index]
         literal = source[left:start]
-        if not target.startswith(literal, pos):
+        if target.startswith(literal, pos):
+            pos += len(literal)
+        elif not (allow_joined and index and literal.isspace()):
             return []
-        pos += len(literal)
         original = source[start:end]
         candidates = [(len(original), KEEP)] if target.startswith(original, pos) else []
         cursor = pos
@@ -50,7 +51,7 @@ def edit_rows(row):
         return
     source = row["src"]
     spans = list(bracket_words(source))
-    replacements = aligned_replacements(source, row["tgt"], spans)
+    replacements = aligned_replacements(source, row["tgt"], spans, allow_joined=True)
     if replacements is None:
         return
     for index, ((_, _, word), replacement) in enumerate(zip(spans, replacements)):
@@ -75,3 +76,15 @@ def apply_edits(source, predict):
         offset = end
     pieces.append(source[offset:])
     return "".join(pieces)
+
+
+def edit_reference(row):
+    if row["task"] != "encode":
+        return row
+    source = row["src"]
+    spans = list(bracket_words(source))
+    replacements = aligned_replacements(source, row["tgt"], spans, allow_joined=True)
+    if replacements is None:
+        return row
+    values = iter(replacements)
+    return {**row, "tgt": apply_edits(source, lambda _: next(values))}

@@ -1,5 +1,6 @@
 import unittest
 
+
 class EncodeEditTests(unittest.TestCase):
     def test_copies_every_character_outside_individual_brackets(self):
         from emojilm.edits import apply_edits
@@ -13,14 +14,21 @@ class EncodeEditTests(unittest.TestCase):
         self.assertEqual(apply_edits(source, lambda _: "changed text 🥧"), source)
 
     def test_prepares_only_unambiguous_targets_that_preserve_literals(self):
-        from emojilm.edits import edit_rows
+        from emojilm.edits import edit_reference, edit_rows
 
-        row = {"task": "encode", "src": "GPT [apple] [unknown].", "tgt": "GPT 🍎 [unknown]."}
+        row = {
+            "task": "encode",
+            "src": "GPT [apple] [unknown].",
+            "tgt": "GPT 🍎 [unknown].",
+        }
         edits = list(edit_rows(row))
         self.assertEqual([edit["tgt"] for edit in edits], ["🍎", "KEEP"])
         self.assertIn("[unknown]", edits[1]["src"])
         self.assertFalse(list(edit_rows({**row, "tgt": "G 🍎 [unknown]."})))
         self.assertFalse(list(edit_rows({**row, "src": "[a][b]", "tgt": "🍎🥧🍒"})))
+        compound = {**row, "src": "[apple]  [pie]", "tgt": "🍎🥧"}
+        self.assertEqual([edit["tgt"] for edit in edit_rows(compound)], ["🍎", "🥧"])
+        self.assertEqual(edit_reference(compound)["tgt"], "🍎  🥧")
 
     def test_edit_task_keeps_existing_token_ids(self):
         from emojilm.tokenizer import Tokenizer
@@ -28,8 +36,12 @@ class EncodeEditTests(unittest.TestCase):
         original = Tokenizer.train(["GPT [apple]"], ["🍎"])
         extended = Tokenizer.from_dict({**original.to_dict(), "encode_edits": True})
         source = "GPT [apple]"
-        self.assertEqual(original.build("encode", source), extended.build("encode", source))
-        self.assertNotEqual(extended.build("encode", source), extended.build("encode-edit", source))
+        self.assertEqual(
+            original.build("encode", source), extended.build("encode", source)
+        )
+        self.assertNotEqual(
+            extended.build("encode", source), extended.build("encode-edit", source)
+        )
         self.assertTrue(Tokenizer.from_dict(extended.to_dict()).encode_edits)
         with self.assertRaises(ValueError):
             original.build("encode-edit", source)

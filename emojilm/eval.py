@@ -50,11 +50,21 @@ def report(rows, predict, engine, *, hints=False, copy_metrics=False):
 def evaluate_model(rows, args):
     import torch
 
-    from .inference import NeuralComposer, generate, load
+    from .inference import NeuralComposer, generate, generate_edits, load
 
     if args.threads:
         torch.set_num_threads(args.threads)
     model, tok = load(args.ckpt, args.device)
+    if args.engine == "model-edit":
+        supported = [row for row in rows if row["task"] == "encode"]
+        if not supported:
+            raise ValueError("model-edit needs encode prompts")
+
+        def predict_edit(row):
+            return [generate_edits(model, tok, row["src"], args.max_new_tokens)]
+
+        report(supported, predict_edit, "model-edit", copy_metrics=args.copy_metrics)
+        return
     lexicon = hint_dictionary() if args.hints else {}
 
     def predict(row):
@@ -90,7 +100,9 @@ def main():
     parser.add_argument("--ckpt", type=Path, default=Path("ckpt/model.pt"))
     parser.add_argument("--data", type=Path, default=Path("data/holdout.jsonl"))
     parser.add_argument(
-        "--engine", choices=["all", "model", "model-compose", "compose"], default="all"
+        "--engine",
+        choices=["all", "model", "model-compose", "compose", "model-edit"],
+        default="all",
     )
     parser.add_argument(
         "--hints", action="store_true", help="Supply hints to direct model generation"
@@ -106,7 +118,7 @@ def main():
     args = parser.parse_args()
     if args.max_new_tokens < 1 or args.threads < 0:
         parser.error("max-new-tokens must be positive and threads non-negative")
-    if args.hints and args.engine in {"compose", "model-compose"}:
+    if args.hints and args.engine in {"compose", "model-compose", "model-edit"}:
         parser.error("--hints applies to direct model generation")
     try:
         rows = load_jsonl(args.data)

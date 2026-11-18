@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--text", required=True)
     parser.add_argument(
         "--engine",
-        choices=["auto", "rules", "compose", "model", "model-compose"],
+        choices=["auto", "rules", "compose", "model", "model-compose", "model-edit"],
         default="auto",
     )
     parser.add_argument("--ckpt", type=Path, default=Path("ckpt/model.pt"))
@@ -51,6 +51,10 @@ def main():
         parser.error("emojify uses the model or auto engine")
     if args.engine == "model-compose" and args.hints is not None:
         parser.error("model-compose uses only the checkpoint's component readings")
+    if args.engine == "model-edit" and (
+        args.mode != "encode" or args.hints is not None
+    ):
+        parser.error("model-edit uses encode mode without hints")
     symbols = emojis_in(args.text) if args.mode == "decode" else []
     try:
         if args.engine in {"auto", "rules"} and args.mode != "emojify":
@@ -93,9 +97,14 @@ def main():
                 f"Checkpoint not found at {args.ckpt}. Run training first."
             )
 
-        from .inference import NeuralComposer, generate, load
+        from .inference import NeuralComposer, generate, generate_edits, load
 
         model, tok = load(args.ckpt, args.device)
+        if args.engine == "model-edit":
+            result = generate_edits(model, tok, args.text, args.max_new_tokens)
+            print("engine=model-edit", file=sys.stderr)
+            print(result)
+            return
         if args.engine == "model-compose":
             composer = NeuralComposer(model, tok, args.max_new_tokens)
             result = composer.translate(args.mode, args.text)

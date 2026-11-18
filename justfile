@@ -23,6 +23,9 @@ data-tinystories *args:
 data-tinystories-long *args:
     "{{python}}" -m emojilm.story_data --long {{args}}
 
+data-encode-edits *args:
+    "{{python}}" -m emojilm.edit_data {{args}}
+
 train *args:
     "{{python}}" -m emojilm.train {{args}}
 
@@ -34,6 +37,9 @@ train-tinystories *args:
 
 train-tinystories-long *args:
     "{{python}}" -m emojilm.train --data data/tinystories-long --out ckpt/tinystories-long --composition-val data/tinystories-long/composition-val.jsonl --steps 12000 {{args}}
+
+train-encode-edits *args:
+    "{{python}}" -m emojilm.train --data data/encode-edits --out ckpt/encode-edits --composition-val data/encode-edits/edit-val.jsonl --steps 12000 {{args}}
 
 smoke:
     "{{python}}" -m emojilm.train --device cpu --threads 2 --steps 8 --batch 4 --eval-every 8 --out ckpt/smoke

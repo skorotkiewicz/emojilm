@@ -103,6 +103,29 @@ just eval --engine model --copy-metrics --max-new-tokens 128 --data data/tinysto
 Run the same evaluation with `--ckpt ckpt/tinystories/model.pt` for the
 baseline.
 
+## Train bracket replacements
+
+Run these commands after preparing `data/tinystories-long`. The builder adds
+examples where the model sees the whole sentence and predicts one bracket's
+emoji or `KEEP`. The recipe saves to `ckpt/encode-edits/model.pt`.
+
+```sh
+just data-encode-edits
+just train-encode-edits --device cuda
+```
+
+Use `model-edit` with the new checkpoint for bracketed `encode` inputs.
+It copies all surrounding text, including spaces between brackets.
+
+```sh
+.venv/bin/python -m emojilm.generate --engine model-edit --ckpt ckpt/encode-edits/model.pt --mode encode --text 'I baked an [apple] [pie].'
+just eval --engine model-edit --copy-metrics --data data/encode-edits/long-val.jsonl --ckpt ckpt/encode-edits/model.pt
+just eval --engine model-edit --copy-metrics --data data/encode-edits/edit-holdout.jsonl --ckpt ckpt/encode-edits/model.pt
+```
+
+`edit-holdout.jsonl` uses the original prompts and keeps spaces between
+brackets in their references. Use those same references for comparisons.
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses

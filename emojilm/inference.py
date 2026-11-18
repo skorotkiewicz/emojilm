@@ -7,6 +7,7 @@ import torch
 from .composition import Composer
 from .config import Config
 from .corpora import canonical
+from .edits import EDIT_TASK, apply_edits
 from .model import EmojiLM
 from .tokenizer import Tokenizer
 
@@ -26,7 +27,7 @@ def load(path, device="cpu"):
 
 
 @torch.inference_mode()
-def generate(model, tok, task, source, hint=None, max_new=64):
+def generate(model, tok, task, source, hint=None, max_new=64, *, require_eos=False):
     prompt, _ = tok.build(task, source, hint=hint)
     if len(prompt) > model.cfg.ctx:
         raise ValueError(
@@ -56,8 +57,27 @@ def generate(model, tok, task, source, hint=None, max_new=64):
         else:
             current.append(token)
         tokens[0, pos] = token
+    else:
+        if require_eos:
+            return []
     answers.append(tok.decode(current))
     return list(dict.fromkeys(answer for answer in answers if answer))
+
+
+def generate_edits(model, tok, source, max_new=16):
+    if not tok.encode_edits:
+        raise ValueError("Use a checkpoint trained with the encode edits dataset")
+
+    def predict(focused):
+        prompt, _ = tok.build(EDIT_TASK, focused)
+        if len(prompt) > model.cfg.ctx:
+            return None
+        answers = generate(
+            model, tok, EDIT_TASK, focused, max_new=min(max_new, 16), require_eos=True
+        )
+        return answers[0] if answers else None
+
+    return apply_edits(source, predict)
 
 
 class NeuralComposer(Composer):

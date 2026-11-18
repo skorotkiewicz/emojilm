@@ -346,7 +346,10 @@ class Tokenizer:
                 "Unsupported tokenizer format. Rebuild data with this version."
             )
         return cls(
-            spec["emoji"], spec["merges"], spec["text_tokens"], spec["size"],
+            spec["emoji"],
+            spec["merges"],
+            spec["text_tokens"],
+            spec["size"],
             encode_edits=spec.get("encode_edits", False),
         )
 
