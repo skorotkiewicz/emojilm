@@ -9,6 +9,27 @@ import unittest
 
 
 class EncodeEditTests(unittest.TestCase):
+    def test_trained_alternatives_go_to_the_ranker_even_when_a_rule_matches(self):
+        import torch
+
+        from emojilm.config import Config
+        from emojilm.inference import generate_edits
+        from emojilm.model import EmojiLM
+        from emojilm.tokenizer import Tokenizer
+
+        source = "Please [seal] the envelope."
+        tok = Tokenizer.train([source], ["🦭"])
+        tok.encode_edits = True
+        model = EmojiLM(
+            Config(vocab=tok.size, ctx=64, layers=1, dim=16, heads=4, ffn=32)
+        )
+        with torch.no_grad():
+            for parameter in model.parameters():
+                parameter.zero_()
+        # With uniform probabilities, the one-token emoji outscores the KEEP text.
+        model.edit_candidates = {"seal": ["KEEP", "🦭"]}
+        self.assertEqual(generate_edits(model, tok, source), "Please 🦭 the envelope.")
+
     def test_distinguishes_mouse_and_bat_from_their_animal_readings(self):
         from emojilm.inference import generate_edits
 

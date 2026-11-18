@@ -125,6 +125,8 @@ def generate_edits(model, tok, source, max_new=16):
     animal_only_seal = set(candidates.get("seal", ())) - {KEEP} == {"🦭"}
 
     def label_for(start, end, word):
+        if len(candidates.get(canonical(word), ())) > 1:
+            return word
         if animal_only_seal and keep_seal_verb(source, start, end, word):
             return None
         return contextual_label(source, start, end, word)

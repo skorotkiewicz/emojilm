@@ -151,6 +151,11 @@ def main():
         type=Path,
         help="Separate prompts for direct-generation checkpoint selection",
     )
+    parser.add_argument(
+        "--composition-val-bundle",
+        action="store_true",
+        help="Rank bundled encode candidates during composition validation",
+    )
     parser.add_argument("--composition-eval-every", type=int, default=1000)
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--seed", type=int, default=7)
@@ -180,6 +185,10 @@ def main():
         )
     if args.threads:
         torch.set_num_threads(args.threads)
+    if args.composition_val_bundle and not (args.bundle_edits and args.composition_val):
+        parser.error(
+            "--composition-val-bundle needs --bundle-edits and --composition-val"
+        )
 
     torch.manual_seed(args.seed)
     rng = random.Random(args.seed)
@@ -218,6 +227,8 @@ def main():
             vocab=tok.size, ctx=args.ctx, layers=7, dim=192, heads=4, ffn=768
         )
     model = EmojiLM(config).to(device)
+    if args.composition_val_bundle:
+        model.edit_candidates = bundle["edit_candidates"]
     decay = [p for p in model.parameters() if p.ndim >= 2]
     no_decay = [p for p in model.parameters() if p.ndim < 2]
     opt = torch.optim.AdamW(

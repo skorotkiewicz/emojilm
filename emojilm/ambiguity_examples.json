@@ -1,0 +1,197 @@
+{
+  "mouse": {
+    "🐁": {
+      "train": [
+        "A [mouse] stole crumbs from the picnic basket.",
+        "The owl dropped a [mouse] near the fence.",
+        "We found a nest where the [mouse] had been hiding.",
+        "A field [mouse] ran past my boots.",
+        "The cat waited for the [mouse] to leave its hole.",
+        "Something tiny squeaked, and a [mouse] squeezed under the door.",
+        "The [mouse] stuffed its cheeks with seeds.",
+        "They released the [mouse] beside a hedgerow.",
+        "We watched a [mouse] dig under the snow.",
+        "He left a peanut near the [mouse] trap.",
+        "Our pet [mouse] climbed up the sleeve of my sweater.",
+        "A [mouse] left a trail of paw prints in the flour."
+      ],
+      "dev": [
+        "Tiny whiskers poked out before the [mouse] came into view.",
+        "A [mouse] was hiding in the pile of feed sacks.",
+        "The [mouse] froze when it heard the fox."
+      ],
+      "holdout": [
+        "The [mouse] gnawed through the cardboard.",
+        "A [mouse] darted out from under the fridge.",
+        "We could hear a [mouse] scurrying behind the pantry wall.",
+        "She named her new pet [mouse] after a flower."
+      ]
+    },
+    "🖱": {
+      "train": [
+        "The [mouse] needs a new battery before I can finish the presentation.",
+        "She dragged the file across the screen with the [mouse].",
+        "Did you plug the [mouse] into the back of the monitor?",
+        "Try rebooting if the [mouse] is lagging.",
+        "His [mouse] double-clicks when he only presses it once.",
+        "The [mouse] cable got caught under the desk.",
+        "I unplugged the [mouse] to free a port for my phone.",
+        "The pointer jumps whenever you lift the [mouse].",
+        "I wiped the sensor on the bottom of my [mouse].",
+        "She bought a compact [mouse] for working on the road.",
+        "You can move the cursor without touching the [mouse].",
+        "The new [mouse] fits comfortably in my left hand."
+      ],
+      "dev": [
+        "I changed the tracking speed for the [mouse] in Settings.",
+        "The [mouse] stopped moving the pointer after I spilled coffee.",
+        "Pack a spare [mouse] with the keyboard for the workshop."
+      ],
+      "holdout": [
+        "My [mouse] stopped responding after the update.",
+        "I paired the [mouse] with my new laptop.",
+        "Use the [mouse] to resize the window by dragging its corner.",
+        "He used the [mouse] to select three cells in the spreadsheet."
+      ]
+    }
+  },
+  "bat": {
+    "🦇": {
+      "train": [
+        "The [bat] slipped through a crack in the roof at dusk.",
+        "I saw a [bat] catching mosquitoes above the pond.",
+        "A fruit [bat] landed in the fig tree.",
+        "The [bat] sheltered in a hollow tree during the day.",
+        "The vet examined the [bat] for injuries to its wings.",
+        "A [bat] in the attic woke the children with its squeaks.",
+        "The [bat] folded its wings and settled on the branch.",
+        "She studied how a [bat] navigates without light.",
+        "A frightened [bat] circled the room looking for an exit.",
+        "The baby [bat] clung to its mother as she slept.",
+        "We saw a [bat] swoop low over the river.",
+        "I turned off the lamp and let the [bat] find its way outside."
+      ],
+      "dev": [
+        "A [bat] dropped from the ceiling and disappeared into the tunnel.",
+        "The zoologist measured the ear of the injured [bat].",
+        "They waited for a [bat] to emerge from the old chimney."
+      ],
+      "holdout": [
+        "A [bat] flew out of the cave.",
+        "The [bat] hung upside down among the rafters.",
+        "The [bat] used echoes to find a moth in the dark.",
+        "We found a sleeping [bat] inside the stone arch."
+      ]
+    },
+    "🏏": {
+      "train": [
+        "The cricketer picked up a new [bat] before the innings.",
+        "She tapped the crease with her [bat] and waited for the bowler.",
+        "Our opening batter oiled the face of the [bat].",
+        "He took a [bat] from the cricket kit and walked to the pitch.",
+        "The spin bowler sent the ball past the [bat] and onto the wicket.",
+        "Her [bat] had a flat face made of willow.",
+        "The [bat] clipped the cricket ball just before it reached the keeper.",
+        "The cricket coach showed me where to grip the [bat].",
+        "I watched him raise his [bat] after scoring a hundred runs in the Test.",
+        "There was a spare [bat] in the pavilion for the next cricket match.",
+        "With one wicket left, she held the [bat] close to her pad.",
+        "The cricket shop replaced the rubber handle on my [bat]."
+      ],
+      "dev": [
+        "At the nets the cricketer let the ball pass without moving his [bat].",
+        "He rested the flat side of the [bat] against his cricket pads.",
+        "Her [bat] cracked during the third over."
+      ],
+      "holdout": [
+        "The cricketer rested the [bat] against the stumps.",
+        "A ball struck the edge of his [bat] at the cricket match.",
+        "The captain lent her [bat] to the new player before the first over.",
+        "The cricket umpire checked the width of the [bat]."
+      ]
+    },
+    "KEEP": {
+      "train": [
+        "The wooden [bat] cracked when he hit the baseball.",
+        "She carried her aluminum [bat] out to the softball diamond.",
+        "The [bat] slipped out of his hands near home plate.",
+        "He put a heavier [bat] in his bag before baseball practice.",
+        "I dragged the [bat] through the dirt as I stepped into the batter's box.",
+        "The softball coach signed the handle of my [bat].",
+        "At the batting cage I tried a smaller [bat].",
+        "The sound of the [bat] hitting the baseball echoed across the park.",
+        "He left his [bat] in the dugout while the other team pitched.",
+        "She borrowed a [bat] from the Little League equipment locker.",
+        "The umpire checked the [bat] before the softball game.",
+        "A foul tip glanced off the [bat] and into the catcher's glove."
+      ],
+      "dev": [
+        "The child set a plastic [bat] beside the baseball tee.",
+        "They painted the team logo on the barrel of the [bat] for opening day at the ballpark.",
+        "He held the [bat] high while waiting for the next fastball."
+      ],
+      "holdout": [
+        "The shortstop put down the [bat] and took his place on the field.",
+        "She used a metal [bat] to send the softball over the fence.",
+        "The catcher threw off his mask to avoid the flying [bat].",
+        "We bought a lighter [bat] for our son's first baseball season."
+      ]
+    }
+  },
+  "seal": {
+    "🦭": {
+      "train": [
+        "The [seal] came up for air beside the kayak.",
+        "We saw a [seal] balancing on a patch of sea ice.",
+        "The harbor [seal] caught a fish under the dock.",
+        "The wildlife center fed the [seal] a bucket of herring.",
+        "A young [seal] called out for its mother on the beach.",
+        "The [seal] used its flippers to climb onto the pier.",
+        "A gray [seal] watched us from the shallows.",
+        "The diver filmed a [seal] chasing bubbles.",
+        "We returned the injured [seal] to the ocean after it recovered.",
+        "A [seal] rolled off the sandbank into the tide.",
+        "There was a ringed [seal] resting by a hole in the ice.",
+        "The [seal] flicked its whiskers and slipped into the water."
+      ],
+      "dev": [
+        "A curious [seal] raised its head above the surface and stared at us.",
+        "They tracked the [seal] as it swam away from the colony.",
+        "The baby [seal] shed its fluffy white coat."
+      ],
+      "holdout": [
+        "A [seal] sunned itself on the rocks.",
+        "The [seal] dived beneath the waves.",
+        "It is illegal to get too close to a [seal] on this shore.",
+        "The [seal] surfaced holding a squid in its mouth."
+      ]
+    },
+    "KEEP": {
+      "train": [
+        "The plumber replaced the rubber [seal] around the drain.",
+        "Press along the edge to [seal] the pastry before baking.",
+        "The clerk stamped the council [seal] on the document.",
+        "Make sure you [seal] the glass jar while the jam is hot.",
+        "A broken safety [seal] means you should return the medicine.",
+        "The package lost its vacuum [seal] during the flight.",
+        "We used warm wax to [seal] the invitation.",
+        "The players hoped a third goal would [seal] the victory.",
+        "I heated the film to [seal] it to the tray.",
+        "A technician checked the O-ring [seal] in the valve.",
+        "The two companies shook hands to [seal] their agreement.",
+        "The gold [seal] on the certificate had the university's name."
+      ],
+      "dev": [
+        "The paint will [seal] the wood against moisture.",
+        "He slid a new [seal] into the lid so the bottle wouldn't leak.",
+        "The technician had to [seal] the sample in a sterile tube."
+      ],
+      "holdout": [
+        "Let's [seal] the deal before lunch.",
+        "She broke the wax [seal] on the letter.",
+        "He used foam to [seal] off the draft under the sill.",
+        "The inspector verified the state [seal] on the license."
+      ]
+    }
+  }
+}
