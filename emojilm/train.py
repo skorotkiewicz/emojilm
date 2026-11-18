@@ -344,6 +344,11 @@ def main():
                         bundle=bundle,
                     )
                     best = candidate
+        if bundle is not None:
+            with tempfile.TemporaryDirectory(dir=args.out) as directory:
+                tokenizer_path = Path(directory) / "tokenizer.json"
+                tok.save(tokenizer_path)
+                tokenizer_path.replace(args.out / tokenizer_path.name)
         report(f"Best checkpoint: {checkpoint}")
 
 

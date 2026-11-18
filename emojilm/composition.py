@@ -1,7 +1,7 @@
 """Translate explicit emoji and bracketed word components in place."""
 
 from .corpora import canonical, hint_dictionary
-from .data import REBUSES
+from .data import REBUSES, emojis_in
 from .rebus_bank import BANK
 from .tokenizer import emoji_at
 
@@ -75,6 +75,11 @@ class Composer:
                 if key not in priorities or rank < priorities[key]:
                     self.symbols[key] = emoji
                     priorities[key] = rank
+        self.max_known_run = (
+            max((len(emojis_in(emoji)) for emoji in self.readings), default=1)
+            if prefer_known_runs
+            else 1
+        )
 
     def read_component(self, emoji):
         return self.readings.get(canonical(emoji))
@@ -84,7 +89,7 @@ class Composer:
 
     def read_run(self, parts):
         if self.prefer_known_runs and len(parts) > 1:
-            known = self.read_component("".join(parts))
+            known = self._read_known_compounds(parts)
             if known:
                 return known
         replacements = [self.read_component(emoji) for emoji in parts]
@@ -92,6 +97,25 @@ class Composer:
             return None
         separator = "" if all(word.isalpha() for word in replacements) else " "
         return separator.join(replacements)
+
+    def _read_known_compounds(self, parts):
+        readings = []
+        start = 0
+        found_compound = False
+        while start < len(parts):
+            limit = min(len(parts), start + self.max_known_run)
+            for end in range(limit, start + 1, -1):
+                reading = self.read_component("".join(parts[start:end]))
+                if reading:
+                    readings.append(reading)
+                    start = end
+                    found_compound = True
+                    break
+            else:
+                glyph = parts[start]
+                readings.append(self.read_component(glyph) or glyph)
+                start += 1
+        return " ".join(readings) if found_compound else None
 
     def render_encode_run(self, source, replacements):
         if all(replacements):

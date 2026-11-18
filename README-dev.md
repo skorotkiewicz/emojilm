@@ -139,8 +139,8 @@ that checkpoint to compare it against `ckpt/encode-edits/model.pt`.
 After training, bundle the supported readings from the training split into a
 portable checkpoint. `model-edit` uses a single supported reading directly,
 uses the model to choose among several readings, and copies unfamiliar brackets.
-In decode mode the bundle replaces emoji runs with their rebus readings and
-copies the surrounding text.
+In decode mode the bundle recognizes known compounds within longer emoji runs.
+It copies the surrounding text exactly.
 
 ```sh
 .venv/bin/python -m emojilm.edit_candidates
@@ -162,8 +162,9 @@ just train --device cuda
 just eval
 ```
 
-The trainer embeds the readings in `ckpt/final/model.pt` when it saves the
-best checkpoint. It writes the run log to `ckpt/final/train.log`. `just eval`
+The trainer embeds the readings and tokenizer in `ckpt/final/model.pt` when it
+saves the best checkpoint. It writes the run log to `ckpt/final/train.log` and
+exports `ckpt/final/tokenizer.json` when training finishes. `just eval`
 scores encode and decode on the long holdout. Pass
 `--data data/encode-edits-expanded/edit-holdout.jsonl` to score the original
 prompts with spaces preserved in the references.

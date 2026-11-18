@@ -52,6 +52,6 @@ just train --device cuda
 just eval
 ```
 
-Training runs for 12,000 steps and saves `ckpt/final/model.pt` with the readings embedded. The training log is `ckpt/final/train.log`. The recipe uses `.venv/bin/python` by default. Set `EMOJILM_PYTHON` to use another interpreter.
+Training runs for 12,000 steps and saves `ckpt/final/model.pt` with the readings and tokenizer embedded. When training finishes, it also writes `ckpt/final/tokenizer.json`. The training log is `ckpt/final/train.log`. The recipe uses `.venv/bin/python` by default. Set `EMOJILM_PYTHON` to use another interpreter.
 
 See [the developer guide](README-dev.md) for data sources, engine options, and training settings.

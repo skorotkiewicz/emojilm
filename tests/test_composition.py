@@ -9,6 +9,31 @@ from unittest.mock import patch
 
 
 class CompositionTests(unittest.TestCase):
+    def test_preserves_known_compounds_inside_a_longer_emoji_run(self):
+        from emojilm.composition import Composer
+
+        composer = Composer(
+            {
+                "🐝": ["bee"],
+                "🍃": ["leaf"],
+                "🍎": ["apple"],
+                "🥧": ["pie"],
+                "🐝🍃": ["believe"],
+                "🍎🥧": ["apple pie"],
+            },
+            prefer_known_runs=True,
+        )
+        self.assertEqual(
+            composer.translate("decode", "  The card says 🐝🍃🍎🥧.\t"),
+            "  The card says believe apple pie.\t",
+        )
+        self.assertEqual(
+            composer.translate("decode", "The card says 🐝🍃🛸."),
+            "The card says believe 🛸.",
+        )
+        self.assertEqual(composer.translate("decode", "🍃🥧"), "leafpie")
+        self.assertEqual(composer.translate("decode", "🐝 🍃"), "bee leaf")
+
     def test_model_encode_can_confirm_a_secondary_reading_on_a_lower_ranked_glyph(self):
         from emojilm.composition import Composer
         from emojilm.inference import NeuralComposer
