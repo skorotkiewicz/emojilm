@@ -6,6 +6,7 @@ __pycache__/
 /data/val.jsonl
 /data/holdout.jsonl
 /data/tokenizer.json
+/data/smoke/
 /data/composition/
 /data/tinystories/
 /data/tinystories-long/

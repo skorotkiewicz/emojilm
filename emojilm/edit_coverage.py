@@ -135,12 +135,16 @@ def build_coverage(base, output):
     if base.resolve() == output.resolve():
         raise ValueError("Choose an output directory separate from the base dataset")
     if not (base / "train.jsonl").is_file():
-        raise ValueError("Build the base data first with just data-encode-edits")
+        raise ValueError(
+            f"Missing {base / 'train.jsonl'}. Run just data to prepare the default dataset."
+        )
     rows = load_jsonl(base / "train.jsonl")
     edits = [row for row in rows if row["task"] == EDIT_TASK]
     tokenizer = Tokenizer.load(base / "tokenizer.json")
     if not edits or not tokenizer.encode_edits:
-        raise ValueError("Build the base data first with just data-encode-edits")
+        raise ValueError(
+            f"{base} needs bracket-edit training examples and their tokenizer"
+        )
     evaluation = {
         name: load_jsonl(base / f"{name}.jsonl") for name in (*EVALUATIONS, "val")
     }

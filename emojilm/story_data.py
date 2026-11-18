@@ -330,8 +330,9 @@ def main():
         "data/tinystories-long" if args.long else "data/tinystories"
     )
     if not (args.base / "train.jsonl").is_file():
-        recipe = "data-tinystories" if args.long else "data-composition"
-        parser.error(f"Build the base data first with just {recipe}")
+        parser.error(
+            f"Missing {args.base / 'train.jsonl'}. Run just data to prepare the default dataset."
+        )
     try:
         if args.stories == DEFAULT_STORIES:
             fetch_source(STORIES_URL, args.stories, convert=cache_verified_stories)

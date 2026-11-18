@@ -19,11 +19,10 @@ python3 -m emojilm.generate --mode encode --text 'I baked an [apple] [pie].'
 
 ## Run a CPU smoke test
 
-With `just` installed, create the local Python environment, build the offline dataset, and run eight training steps.
+With `just` installed, create the local Python environment. The smoke recipe builds its own offline dataset and runs eight training steps.
 
 ```sh
 just setup
-just data
 just smoke
 ```
 
@@ -45,10 +44,12 @@ Use `emojify` to turn a sentence into an emoji summary.
 
 ## Train the final model
 
-Use the [prepared training data](README-dev.md#train-the-final-model) and a CUDA-enabled PyTorch environment.
+From a fresh checkout, prepare the [training data](README-dev.md#train-the-final-model) and train with a CUDA-enabled PyTorch environment.
 
 ```sh
-just train-final --device cuda
+just data
+just train --device cuda
+just eval
 ```
 
 Training runs for 12,000 steps and saves `ckpt/final/model.pt` with the readings embedded. The training log is `ckpt/final/train.log`. The recipe uses `.venv/bin/python` by default. Set `EMOJILM_PYTHON` to use another interpreter.
