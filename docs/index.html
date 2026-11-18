@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#fbf8ed">
+    <title>Emoji Post Office · EmojiLM</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E💌%3C/text%3E%3C/svg%3E"
+    >
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="mast">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">✉</span> Emoji Post Office
+      </div><a href="https://github.com/skorotkiewicz/emojilm">Source code ↗</a>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <div class="kicker"><span></span> EmojiLM playground</div>
+          <h1>Say it with <em>emoji.</em></h1>
+          <p>
+            A tiny language model for sending big feelings in small pictures.
+          </p>
+        </div>
+        <div class="mail-art" aria-hidden="true">
+          <div class="flight"></div>
+          <div class="stamp stamp-back"><span>🍃</span></div>
+          <div class="stamp stamp-main">
+            <b>EMOJI POST</b><span>🐝</span><small>AIR MAIL <i>✦</i></small>
+          </div>
+          <div class="cancel">✦<br>POST OFFICE<br>✦</div>
+        </div>
+      </section>
+      <section class="desk" aria-label="Translator">
+        <div class="desk-head">
+          <h2>Translation desk</h2><span class="local"><i></i> Runs
+            locally</span>
+        </div>
+        <div class="modes" role="group" aria-label="Translation mode">
+          <button data-mode="encode" aria-pressed="true">
+            ✎ &nbsp; Encode
+          </button>
+          <button data-mode="decode" aria-pressed="false">
+            ☷ &nbsp; Decode
+          </button>
+          <button data-mode="rebus" aria-pressed="false">♧ &nbsp; Rebus</button>
+          <button data-mode="emojify" aria-pressed="false">
+            ✷ &nbsp; Emojify
+          </button>
+        </div>
+        <div class="panes">
+          <div class="compose">
+            <label for="message" id="label">Your message</label><textarea
+              id="message"
+              rows="3"
+              spellcheck="false"
+            >I baked an [apple] [pie].</textarea><p
+              id="hint"
+            >
+              Wrap the words you want to translate in [brackets].
+            </p>
+          </div>
+          <div class="delivery">
+            <div class="result-title">
+              <h3>Special delivery</h3><span aria-hidden="true">✉</span>
+            </div><output id="result" aria-live="polite"
+            >Your translation will arrive here.</output><button
+              id="copy"
+              disabled
+            >
+              Copy result
+            </button>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="send">Translate <span>→</span></button><span
+            id="status"
+            role="status"
+          ></span>
+        </div>
+      </section>
+      <section class="samples">
+        <div class="samples-head">
+          <h2>From the mailbag</h2>
+          <button id="random">Shuffle examples ⟳</button>
+        </div>
+        <div id="cards"></div>
+      </section>
+    </main>
+    <footer>
+      <b>✉ &nbsp; Emoji Post Office</b><a
+        href="https://huggingface.co/Grizzlykw/emojilm"
+      >Made with EmojiLM ↗</a>
+    </footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

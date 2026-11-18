@@ -21,6 +21,8 @@ python3 -m emojilm.generate --mode encode --text 'I baked an [apple] [pie].'
 # I baked an 🍎 🥧.
 ```
 
+To try all four modes in your browser, run the [Emoji Post Office web playground](docs/README.md). It includes the ONNX model and runs on your device.
+
 ## Run a CPU smoke test
 
 With `just` installed, create the local Python environment. The smoke recipe builds its own offline dataset and runs eight training steps.
