@@ -16,19 +16,10 @@ from .tokenizer import Tokenizer
 ENCODE_ALIASES = {"eat": "🍽️"}
 
 
-def bundle_checkpoint(source, data, output):
-    if source.resolve() == output.resolve():
-        raise ValueError("Choose a separate path for the bundled checkpoint")
-    checkpoint = torch.load(source, map_location="cpu", weights_only=True)
-    if (
-        checkpoint.get("format") != "emojilm-1"
-        or not Tokenizer.from_dict(checkpoint["tokenizer"]).encode_edits
-    ):
-        raise ValueError("Use a checkpoint trained with the encode edits dataset")
-
+def edit_bundle_metadata(rows):
     readings = defaultdict(set)
     rebuses = defaultdict(Counter)
-    for row in load_jsonl(data):
+    for row in rows:
         if row["task"] == "rebus" and is_emoji_replacement(row["src"]):
             primary = row["tgt"].split(" <alt> ", 1)[0].strip()
             if primary:
@@ -44,19 +35,34 @@ def bundle_checkpoint(source, data, output):
     for label, glyph in ENCODE_ALIASES.items():
         readings.setdefault(label, {glyph})
 
-    checkpoint["edit_candidates"] = {
-        label: sorted(choices) for label, choices in sorted(readings.items())
+    return {
+        "edit_candidates": {
+            label: sorted(choices) for label, choices in sorted(readings.items())
+        },
+        "decode_readings": {
+            glyph: [counts.most_common(1)[0][0]]
+            for glyph, counts in sorted(rebuses.items())
+        },
     }
-    checkpoint["decode_readings"] = {
-        glyph: [counts.most_common(1)[0][0]]
-        for glyph, counts in sorted(rebuses.items())
-    }
+
+
+def bundle_checkpoint(source, data, output):
+    if source.resolve() == output.resolve():
+        raise ValueError("Choose a separate path for the bundled checkpoint")
+    checkpoint = torch.load(source, map_location="cpu", weights_only=True)
+    if (
+        checkpoint.get("format") != "emojilm-1"
+        or not Tokenizer.from_dict(checkpoint["tokenizer"]).encode_edits
+    ):
+        raise ValueError("Use a checkpoint trained with the encode edits dataset")
+
+    checkpoint.update(edit_bundle_metadata(load_jsonl(data)))
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=output.parent) as directory:
         snapshot = Path(directory) / output.name
         torch.save(checkpoint, snapshot)
         snapshot.replace(output)
-    return len(readings)
+    return len(checkpoint["edit_candidates"])
 
 
 def main():

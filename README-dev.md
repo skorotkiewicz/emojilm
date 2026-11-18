@@ -151,6 +151,27 @@ just bundle-encode-edits
 .venv/bin/python -m emojilm.generate --engine model-edit --ckpt ckpt/encode-edits-bundled/model.pt --mode decode --text 'I baked a 🥧.'
 ```
 
+## Train the final model
+
+Use the prepared `data/encode-edits-expanded/` directory. To build it from a
+fresh checkout, run the data recipes in order.
+
+```sh
+just data-composition
+just data-tinystories
+just data-tinystories-long
+just data-encode-edits
+just data-encode-edits-expanded
+```
+
+```sh
+just train-final --device cuda
+just eval --engine model-edit --copy-metrics --ckpt ckpt/final/model.pt --data data/encode-edits-expanded/long-val.jsonl
+```
+
+The trainer embeds the readings in `ckpt/final/model.pt` when it saves the
+best checkpoint. It writes the run log to `ckpt/final/train.log`.
+
 ## Rebuild the dataset
 
 `just data` builds the curated dataset offline. `just data-full` reuses

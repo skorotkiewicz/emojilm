@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 from .config import Config
 from .data import load_jsonl, matches_reference
+from .edit_candidates import edit_bundle_metadata
 from .edits import EDIT_TASK
 from .inference import generate, generate_edits
 from .model import EmojiLM
@@ -96,7 +97,9 @@ def validate_composition(model, tok, rows):
     return {"exact": correct, "total": len(rows)}
 
 
-def save_checkpoint(path, model, tok, step, losses, composition_score=None):
+def save_checkpoint(
+    path, model, tok, step, losses, composition_score=None, *, bundle=None
+):
     with tempfile.TemporaryDirectory(dir=path.parent) as directory:
         snapshot = Path(directory) / path.name
         score_metadata = (
@@ -115,6 +118,7 @@ def save_checkpoint(path, model, tok, step, losses, composition_score=None):
                 "step": step,
                 "validation_loss": losses,
                 **score_metadata,
+                **(bundle or {}),
             },
             snapshot,
         )
@@ -125,6 +129,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument("--out", type=Path, default=Path("ckpt"))
+    parser.add_argument(
+        "--bundle-edits",
+        action="store_true",
+        help="Embed encode and decode readings in model.pt",
+    )
     parser.add_argument(
         "--model-size",
         choices=["base", "tiny"],
@@ -177,9 +186,12 @@ def main():
     device = torch.device(args.device)
     try:
         tok = Tokenizer.load(args.data / "tokenizer.json")
-        train, train_skipped = pack_rows(
-            load_jsonl(args.data / "train.jsonl"), tok, args.ctx
-        )
+        if args.bundle_edits and not tok.encode_edits:
+            raise ValueError("Bundling requires the encode edits dataset")
+        rows = load_jsonl(args.data / "train.jsonl")
+        bundle = edit_bundle_metadata(rows) if args.bundle_edits else None
+        train, train_skipped = pack_rows(rows, tok, args.ctx)
+        del rows
         val, val_skipped = pack_rows(load_jsonl(args.data / "val.jsonl"), tok, args.ctx)
         composition_val = (
             load_jsonl(args.composition_val) if args.composition_val else []
@@ -323,7 +335,13 @@ def main():
                     candidate = (-exact, score)
                 if (not composition_val or composition_due) and candidate < best:
                     save_checkpoint(
-                        checkpoint, model, tok, step, losses, composition_score
+                        checkpoint,
+                        model,
+                        tok,
+                        step,
+                        losses,
+                        composition_score,
+                        bundle=bundle,
                     )
                     best = candidate
         report(f"Best checkpoint: {checkpoint}")

@@ -27,32 +27,30 @@ just data
 just smoke
 ```
 
-## Train and evaluate
+## Use the final model
 
-Use a CUDA-enabled PyTorch environment for GPU training. The recipes use `.venv/bin/python` by default. Set `EMOJILM_PYTHON` to use another interpreter.
-
-```sh
-just data-composition
-just train-composition --device cuda
-just eval --engine model \
-  --ckpt ckpt/composition/model.pt \
-  --data data/composition/holdout.jsonl
-```
-
-The data recipe downloads missing corpora. The trainer runs for 12,000 steps and picks the checkpoint with the most exact matches on the composition development set. The evaluation command tests direct generation on 120 held-out prompts.
-
-To translate with the trained checkpoint, use `--engine model-compose` to read each component and preserve the surrounding text.
+With the checkpoint at `ckpt/final/model.pt`, use `model-edit` to translate emoji or bracketed text in place.
 
 ```sh
-.venv/bin/python -m emojilm.generate --engine model-compose \
-  --ckpt ckpt/composition/model.pt --text 'A 🧈🪰 landed on her hand.'
+.venv/bin/python -m emojilm.generate --engine model-edit \
+  --ckpt ckpt/final/model.pt --text 'A 🧈🪰 landed on her hand.'
 ```
 
 Use `emojify` to turn a sentence into an emoji summary.
 
 ```sh
 .venv/bin/python -m emojilm.generate --mode emojify --text 'I love pizza and my dog' \
-  --ckpt ckpt/composition/model.pt
+  --ckpt ckpt/final/model.pt
 ```
+
+## Train the final model
+
+Use the [prepared training data](README-dev.md#train-the-final-model) and a CUDA-enabled PyTorch environment.
+
+```sh
+just train-final --device cuda
+```
+
+Training runs for 12,000 steps and saves `ckpt/final/model.pt` with the readings embedded. The training log is `ckpt/final/train.log`. The recipe uses `.venv/bin/python` by default. Set `EMOJILM_PYTHON` to use another interpreter.
 
 See [the developer guide](README-dev.md) for data sources, engine options, and training settings.
