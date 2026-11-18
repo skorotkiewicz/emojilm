@@ -169,6 +169,18 @@ scores encode and decode on the long holdout. Pass
 `--data data/encode-edits-expanded/edit-holdout.jsonl` to score the original
 prompts with spaces preserved in the references.
 
+## Fit the word-sense classifiers
+
+With the ambiguity dataset and its trained checkpoint available, run the following commands from the project directory.
+
+```sh
+.venv/bin/python -m emojilm.sense_tune
+just eval --ckpt ckpt/sense/model.pt --data data/ambiguity/ambiguity-holdout.jsonl
+just eval --ckpt ckpt/sense/model.pt --data tests/fixtures/sense-transfer.jsonl
+```
+
+The CPU fit uses 84 existing ambiguity training edits and 84 additional sentences with contrasting meanings. For each marked word, a linear classifier learns to choose a reading from the Transformer's final prompt representation. The output checkpoint includes a classifier only when it improves exact matches for that word on the development split. In this run, mouse and bat qualified. Both classifiers together contain 1,605 coefficients, including biases.
+
 ## Rebuild the dataset
 
 The final data build reuses `data/raw/cldr_en.json` and

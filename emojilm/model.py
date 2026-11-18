@@ -68,12 +68,15 @@ class EmojiLM(nn.Module):
             nn.init.ones_(m.weight)
             nn.init.zeros_(m.bias)
 
-    def forward(self, idx):
-        B, T = idx.shape
+    def hidden(self, idx):
+        T = idx.size(1)
         x = self.tok_emb(idx) + self.pos_emb(torch.arange(T, device=idx.device))
         for b in self.blocks:
             x = b(x)
-        return F.linear(self.ln_f(x), self.tok_emb.weight)  # weight tying
+        return self.ln_f(x)
+
+    def forward(self, idx):
+        return F.linear(self.hidden(idx), self.tok_emb.weight)  # weight tying
 
     def num_params(self):
         return sum(p.numel() for p in self.parameters())

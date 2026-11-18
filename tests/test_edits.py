@@ -29,6 +29,14 @@ class EncodeEditTests(unittest.TestCase):
         # With uniform probabilities, the one-token emoji outscores the KEEP text.
         model.edit_candidates = {"seal": ["KEEP", "🦭"]}
         self.assertEqual(generate_edits(model, tok, source), "Please 🦭 the envelope.")
+        # A fitted head can choose KEEP when both readings fit the token budget.
+        model.sense_heads = {
+            "seal": (["KEEP", "🦭"], torch.zeros(2, 16), torch.tensor([1.0, 0.0]))
+        }
+        self.assertEqual(generate_edits(model, tok, source), source)
+        self.assertEqual(
+            generate_edits(model, tok, source, max_new=2), "Please 🦭 the envelope."
+        )
 
     def test_distinguishes_mouse_and_bat_from_their_animal_readings(self):
         from emojilm.inference import generate_edits

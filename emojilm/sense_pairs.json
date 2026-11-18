@@ -1,0 +1,106 @@
+{
+  "mouse": {
+    "🐁": [
+      "What gave the [mouse] away was the sound of nibbling.",
+      "The [mouse] is under the bookshelf, eating a corn kernel.",
+      "She scooped up the [mouse] and felt its little claws.",
+      "His drawing showed a [mouse] with fur and a pink nose.",
+      "Take the [mouse] out of its cage while I change the bedding.",
+      "I lost sight of the [mouse] when it burrowed into the straw.",
+      "The [mouse] twitched its ears when it smelled the cheese.",
+      "Someone had left the [mouse] a shallow dish of water.",
+      "Why does the [mouse] carry one seed at a time?",
+      "Can you see the [mouse] peeking out of the grain bin?",
+      "My sister says her [mouse] likes to sleep in a paper tube.",
+      "I studied the [mouse] as it washed its face."
+    ],
+    "🖱": [
+      "What gave the [mouse] away was its blinking green light.",
+      "The [mouse] is under the bookshelf, still attached to the USB hub.",
+      "She scooped up the [mouse] and clicked on the printer icon.",
+      "His drawing showed a [mouse] with two buttons and a scroll wheel.",
+      "Take the [mouse] out of its box while I install the driver.",
+      "I lost control of the [mouse] when the wireless connection dropped.",
+      "The [mouse] comes with a charging cradle.",
+      "Someone had left the [mouse] beside the trackpad.",
+      "Why does the [mouse] open every folder twice?",
+      "Can you see the [mouse] listed among the Bluetooth devices?",
+      "My sister says her [mouse] works on a desk without a pad.",
+      "I tested the [mouse] by drawing a circle in the graphics editor."
+    ]
+  },
+  "bat": {
+    "🦇": [
+      "The child pointed at the [bat] as it swooped after insects.",
+      "She inspected the [bat] and found a tear in its wing.",
+      "They let the [bat] out after sunset to go hunting.",
+      "Where did the [bat] roost last winter?",
+      "We got a photo of the [bat] just before it took flight.",
+      "They took the [bat] to a wildlife hospital.",
+      "The keeper weighed the [bat] before feeding it pieces of mango.",
+      "On the recording you could hear the [bat] hunting by sound.",
+      "He sketched a [bat] nursing its pup.",
+      "I found the [bat] tangled in a net near the orchard.",
+      "They tagged the [bat] to study its migration.",
+      "She made room for the [bat] to spread both wings."
+    ],
+    "🏏": [
+      "The child pointed at the [bat] signed by the Australian wicketkeeper.",
+      "She inspected the [bat] and found a dent where the cricket ball had hit.",
+      "They let the batter choose a [bat] for the second innings.",
+      "Where did the opener leave his [bat] after the Test match?",
+      "We got a photo of the [bat] next to the three wickets.",
+      "They took the [bat] to the cricket club for a new grip.",
+      "The umpire measured the [bat] before the Twenty20 final.",
+      "On the replay you could see the ball brush the [bat] on its way to slip.",
+      "He sketched a [bat] lying across a pair of batting pads at Lord's.",
+      "I found the [bat] next to the bails in the cricket pavilion.",
+      "They auctioned the [bat] that scored the winning six.",
+      "She lifted her [bat] to sweep the spinner through square leg."
+    ],
+    "KEEP": [
+      "The child pointed at the [bat] signed by a major league slugger.",
+      "She inspected the [bat] and found pine tar on the handle.",
+      "They let the hitter choose a [bat] for the home run derby.",
+      "Where did the leadoff hitter leave his [bat] after the World Series?",
+      "We got a photo of the [bat] next to a first baseman's mitt.",
+      "They took the [bat] to the Little League field on Saturday.",
+      "The umpire measured the [bat] before the girls' softball final.",
+      "On the replay you could see the [bat] connect on the third strike.",
+      "He sketched a [bat] lying across home plate at Yankee Stadium.",
+      "I found the [bat] by the pitching machine at the baseball academy.",
+      "They auctioned the [bat] that hit the grand slam.",
+      "She lifted her [bat] to bunt a curveball down the third base line."
+    ]
+  },
+  "seal": {
+    "🦭": [
+      "I checked on the [seal] after the marine rescue team arrived.",
+      "The guide showed us a [seal] basking beside the fishing boat.",
+      "There was a [seal] with a white pup in the aquarium enclosure.",
+      "We moved the [seal] to a pool filled with salt water.",
+      "She watched the [seal] swallow a whole mackerel.",
+      "The photographer knelt by the [seal] as it crawled out of the surf.",
+      "He drew a [seal] with wet whiskers and spotted fur.",
+      "Their report described a [seal] following a fishing trawler.",
+      "I heard the [seal] bark from the far end of the dock.",
+      "A biologist weighed the [seal] before releasing it at sea.",
+      "They found a [seal] caught in an abandoned fishing net.",
+      "This [seal] learned to balance a ball on its nose."
+    ],
+    "KEEP": [
+      "I checked on the [seal] after the mechanic tightened the pump.",
+      "The guide showed us a [seal] impressed into the ancient tablet.",
+      "There was a [seal] across the lid to show whether anyone had opened it.",
+      "We moved the [seal] to a groove around the pipe.",
+      "She watched the notary press his [seal] into the paper.",
+      "The photographer used tape to [seal] the light leak.",
+      "He drew a [seal] for the town council's stationery.",
+      "Their report described a [seal] failing under pressure.",
+      "I heard the [seal] pop when I opened the fresh coffee.",
+      "A final point would [seal] our place in the tournament.",
+      "They found a [seal] missing from the engine rebuild kit.",
+      "This tool will [seal] the edges of a plastic pouch."
+    ]
+  }
+}

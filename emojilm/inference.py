@@ -32,6 +32,10 @@ def load(path, device="cpu"):
     model.load_state_dict(checkpoint["model"])
     model.edit_candidates = checkpoint.get("edit_candidates")
     model.decode_readings = checkpoint.get("decode_readings")
+    model.sense_heads = {
+        label: (head["choices"], head["weight"].to(device), head["bias"].to(device))
+        for label, head in checkpoint.get("sense_heads", {}).items()
+    }
     model.to(device).eval()
     return model, tok
 
@@ -83,6 +87,14 @@ def choose_edit(model, tok, focused, choices, max_new):
     limit = min(max_new, model.cfg.ctx - len(prefix) + 1)
     eos = tok.sid["<eos>"]
     device = model.tok_emb.weight.device
+    head = getattr(model, "sense_heads", {}).get(edit_label(focused))
+    if head is not None:
+        labels, weight, bias = head
+        if list(choices) == labels and all(
+            len(tok.encode(v)) + 1 <= limit for v in labels
+        ):
+            features = model.hidden(torch.tensor([prefix], device=device))[0, -1]
+            return labels[int((weight @ features + bias).argmax())]
     best_value, best_score = None, -math.inf
     for value in choices:
         target = [*tok.encode(value), eos]
