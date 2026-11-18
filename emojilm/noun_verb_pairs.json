@@ -1,0 +1,89 @@
+{
+  "book": {
+    "train": [
+      ["She closed the [book] quietly.", "She called to [book] a room."],
+      ["I put my [book] on the shelf.", "I usually [book] several weeks ahead."],
+      ["Which [book] won the prize?", "Which flights did you [book]?"],
+      ["A [book] slid off the counter.", "Please [book] us a taxi."],
+      ["His new [book] has illustrations.", "Can you [book] the auditorium?"],
+      ["One [book] arrived in the mail.", "We might [book] another lesson."],
+      ["I bought that [book] yesterday.", "Did Sam [book] the tickets yesterday?"],
+      ["Our [book] needs an index.", "People [book] holidays online."],
+      ["Your [book] has a torn cover.", "You must [book] a slot in advance."],
+      ["Read this [book] on the bus.", "Let's [book] seats on the bus."],
+      ["Her favorite [book] is out of print.", "Try to [book] a later appointment."],
+      ["Returning a borrowed [book] felt good.", "They often [book] bands for weddings."]
+    ],
+    "dev": [
+      ["I opened the [book] at chapter six.", "I forgot to [book] the rehearsal studio."],
+      ["My [book] got soaked in the rain.", "Could we [book] a cabin on deck?"],
+      ["Every [book] has a barcode.", "Families [book] early for the festival."]
+    ],
+    "holdout": [
+      ["Someone left a [book] beside the kettle.", "Someone should [book] the piano tuner."],
+      ["Whose [book] is on the radiator?", "Who will [book] the ferry crossing?"],
+      ["That battered [book] belonged to our teacher.", "Our teacher wants to [book] a museum guide."],
+      ["She slid her [book] into her backpack.", "Guests can [book] breakfast at reception."],
+      ["Another [book] turned up in the attic.", "They rarely [book] the same hotel twice."],
+      ["He carried a heavy [book] up the ladder.", "I had better [book] a plumber before Friday."]
+    ]
+  },
+  "watch": {
+    "train": [
+      ["The [watch] has a silver dial.", "The twins [watch] cartoons together."],
+      ["My [watch] loses a minute each day.", "I sometimes [watch] the sunrise."],
+      ["Give him his [watch] before swimming.", "Come and [watch] the divers."],
+      ["A [watch] fell from the drawer.", "Can you [watch] the oven?"],
+      ["This [watch] runs on sunlight.", "Please [watch] the traffic."],
+      ["Which [watch] matches the bracelet?", "Which race did you [watch]?"],
+      ["Her old [watch] needed a battery.", "They wanted to [watch] the parade."],
+      ["I found your [watch] at the gym.", "You should [watch] your footing."],
+      ["Each [watch] comes with a spare strap.", "We [watch] for whales from the shore."],
+      ["Dad handed me his gold [watch].", "Dad lets me [watch] comedy after dinner."],
+      ["Winding that [watch] takes patience.", "Stand here and [watch] for a signal."],
+      ["The jeweler fixed our [watch].", "Birders often [watch] this marsh."]
+    ],
+    "dev": [
+      ["A waterproof [watch] suits a sailor.", "Will the sailor [watch] the tide?"],
+      ["I left my [watch] at the repair shop.", "Would you [watch] my suitcase?"],
+      ["This little [watch] keeps perfect time.", "We [watch] the clouds gather."]
+    ],
+    "holdout": [
+      ["Grandma wound her [watch] after dinner.", "Grandma likes to [watch] the evening news."],
+      ["His scratched [watch] stopped at seven.", "She will [watch] her nephew until seven."],
+      ["Is that your [watch] by the soap?", "Would someone [watch] the soup for me?"],
+      ["No [watch] in the display had hands.", "Thousands [watch] the final every year."],
+      ["He checked the [watch] under his cuff.", "Students may [watch] the rehearsal from the balcony."],
+      ["I inherited a pocket [watch] with a chain.", "If you [watch] closely, the pattern repeats."]
+    ]
+  },
+  "train": {
+    "train": [
+      ["Our [train] arrived at platform six.", "We [train] on the track each morning."],
+      ["The last [train] was packed.", "They usually [train] local volunteers."],
+      ["A [train] passed under the bridge.", "Please [train] the dog to sit."],
+      ["I took that [train] to the coast.", "I have to [train] the new cashier."],
+      ["Which [train] goes downtown?", "Which recruits did the sergeant [train]?"],
+      ["My [train] got delayed by snow.", "We must [train] before the tournament."],
+      ["One [train] was waiting at the signal.", "Can you [train] a parrot to talk?"],
+      ["His overnight [train] had sleeping cars.", "They want to [train] for the relay."],
+      ["She boarded her [train] after lunch.", "She will [train] the afternoon crew."],
+      ["This [train] has a dining car.", "Sprinters [train] hard for a short race."],
+      ["I watched the freight [train] disappear.", "Come and [train] with our team."],
+      ["Every [train] stops at the junction.", "The coaches sometimes [train] together."]
+    ],
+    "dev": [
+      ["They heard a [train] whistle outside.", "They agreed to [train] two apprentices."],
+      ["My early [train] was cancelled.", "Can I [train] here during winter?"],
+      ["That [train] crosses the valley.", "Swimmers [train] before school."]
+    ],
+    "holdout": [
+      ["We waved as the [train] pulled away.", "We volunteered to [train] the shelter dogs."],
+      ["Your [train] is the one on the left.", "Tomorrow you can [train] with a partner."],
+      ["An empty [train] rattled overhead.", "Fire crews [train] in the empty warehouse."],
+      ["I almost missed my [train] this morning.", "The gym is where I [train] on Tuesdays."],
+      ["Their express [train] skipped our stop.", "The manager plans to [train] both interns."],
+      ["Another [train] appeared around the bend.", "Cyclists often [train] indoors when it rains."]
+    ]
+  }
+}

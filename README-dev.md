@@ -181,6 +181,17 @@ just eval --ckpt ckpt/sense/model.pt --data tests/fixtures/sense-transfer.jsonl
 
 The CPU fit uses 84 existing ambiguity training edits and 84 additional sentences with contrasting meanings. For each marked word, a linear classifier learns to choose a reading from the Transformer's final prompt representation. The output checkpoint includes a classifier only when it improves exact matches for that word on the development split. In this run, mouse and bat qualified. Both classifiers together contain 1,605 coefficients, including biases.
 
+### Noun and verb pairs
+
+Starting with `ckpt/sense/model.pt`, fit a shared classifier for marked `book`, `watch`, and `train` on CPU. It uses the frozen Transformer's representation around each bracket and nearby grammatical cues. For a noun it passes the emoji choices to the existing encoder. For a verb it keeps the marked text.
+
+```sh
+.venv/bin/python -m emojilm.noun_verb
+.venv/bin/python -m emojilm.noun_verb --eval-only --ckpt ckpt/noun-verb/model.pt
+```
+
+The experiment uses 36 training pairs, nine development pairs and 18 held-out pairs. Each pair contains two sentences, and both outputs must match exactly. The previous checkpoint scored 0/18 pairs (18/36 individual sentences). The candidate scored 15/18 pairs (33/36 sentences), including all six railway/training pairs.
+
 ## Rebuild the dataset
 
 The final data build reuses `data/raw/cldr_en.json` and

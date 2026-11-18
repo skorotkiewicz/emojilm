@@ -1,10 +1,11 @@
 """Load a bundled checkpoint and generate answers with PyTorch."""
 
 import math
+import re
 
 import torch
 
-from .composition import Composer
+from .composition import Composer, bracket_words
 from .config import Config
 from .corpora import canonical
 from .edits import (
@@ -36,6 +37,10 @@ def load(path, device="cpu"):
         label: (head["choices"], head["weight"].to(device), head["bias"].to(device))
         for label, head in checkpoint.get("sense_heads", {}).items()
     }
+    model.noun_verb_gate = checkpoint.get("noun_verb_gate")
+    if model.noun_verb_gate:
+        for key in ("weight", "bias"):
+            model.noun_verb_gate[key] = model.noun_verb_gate[key].to(device)
     model.to(device).eval()
     return model, tok
 
@@ -78,8 +83,59 @@ def generate(model, tok, task, source, hint=None, max_new=64, *, require_eos=Fal
     return list(dict.fromkeys(answer for answer in answers if answer))
 
 
+_CONTEXT_WORDS = (
+    frozenset(
+        "a an the this that these those my your his her its our their each every another some".split()
+    ),
+    frozenset("i you he she it we they".split()),
+    frozenset("can could will would may might must shall should do does did".split()),
+    frozenset({"to"}),
+)
+
+
+@torch.inference_mode()
+def span_features(model, tok, focused):
+    source, marker = focused.rsplit("\n", 1)
+    index = int(marker.split(" ", 1)[0]) - 1
+    start, end, _ = list(bracket_words(source))[index]
+    # Capture the left context, the marked span, and nearby words to its right.
+    # Each occurrence gets its own representation, including repeated labels.
+    middle = tok.encode(f"[{edit_label(focused)}]")
+    available = model.cfg.ctx - len(middle) - 1
+    if available < 0:
+        raise ValueError("Marked word exceeds classifier context")
+    left_context = tok.encode(source[:start].rstrip())
+    left_count = min(len(left_context), 24, available)
+    left = [tok.sid["<bos>"], *left_context[len(left_context) - left_count :]]
+    right = tok.encode(source[end:])[: min(12, available - left_count)]
+    ids = torch.tensor([left + middle + right], device=model.tok_emb.weight.device)
+    h = model.hidden(ids)[0]
+    before = re.findall(r"\w+|[^\w\s]", source[:start].casefold())
+    after = re.search(r"\w+|[^\w\s]", source[end:].casefold())
+    neighbors = (["", ""] + before)[-2:] + [after[0] if after else ""]
+    # Scale the binary grammatical cues to the norm of one hidden vector.
+    cues = h.new_tensor(
+        [word in group for word in neighbors for group in _CONTEXT_WORDS]
+    )
+    return torch.cat(
+        (
+            h[len(left) - 1],
+            h[len(left) + len(middle) - 1],
+            h[-1],
+            cues * math.sqrt(model.cfg.dim),
+        )
+    )
+
+
 @torch.inference_mode()
 def choose_edit(model, tok, focused, choices, max_new):
+    gate = getattr(model, "noun_verb_gate", None)
+    if gate and edit_label(focused) in gate["labels"]:
+        if (
+            gate["weight"] @ span_features(model, tok, focused) + gate["bias"]
+        ).item() <= 0:
+            return KEEP
+        choices = [choice for choice in choices if choice != KEEP]
     if len(choices) <= 1:
         return next(iter(choices), None)
 

@@ -9,6 +9,33 @@ import unittest
 
 
 class EncodeEditTests(unittest.TestCase):
+    def test_noun_verb_gate_scores_each_occurrence_in_place(self):
+        from emojilm.config import Config
+        from emojilm.edits import edit_prompt
+        from emojilm.inference import generate_edits, span_features
+        from emojilm.model import EmojiLM
+        from emojilm.tokenizer import Tokenizer
+
+        source = "I [train] before the [train] arrives."
+        tok = Tokenizer.train([source], ["🚆"])
+        tok.encode_edits = True
+        model = EmojiLM(
+            Config(vocab=tok.size, ctx=32, layers=1, dim=16, heads=4, ffn=32)
+        )
+        model.edit_candidates = {"train": ["KEEP", "🚆"]}
+        verb, noun = [
+            span_features(model, tok, edit_prompt(source, i, "train")) for i in (0, 1)
+        ]
+        weight = noun - verb
+        model.noun_verb_gate = {
+            "labels": ["train"],
+            "weight": weight,
+            "bias": -(weight @ ((noun + verb) / 2)),
+        }
+        self.assertEqual(
+            generate_edits(model, tok, source), "I [train] before the 🚆 arrives."
+        )
+
     def test_trained_alternatives_go_to_the_ranker_even_when_a_rule_matches(self):
         import torch
 
