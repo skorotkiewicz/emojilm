@@ -7,7 +7,7 @@ A browser playground for EmojiLM. Pick a card from the mailbag or type a message
 From the EmojiLM project root:
 
 ```sh
-python3 -m http.server --bind 127.0.0.1 --directory web 8000
+python3 -m http.server --bind 127.0.0.1 --directory docs 8000
 ```
 
 Open [localhost:8000](http://localhost:8000). The directory is also ready for static hosting. Serve the JavaScript modules as JavaScript and the WASM binary as `application/wasm`. A browser with WebAssembly SIMD and module worker support can run the whole translator on-device. Messages stay in the browser.
@@ -26,7 +26,7 @@ In a Python environment with the project's PyTorch dependencies, run these comma
 
 ```sh
 python -m pip install onnx onnxruntime numpy
-python web/export_model.py --ckpt ckpt/final/model.pt --out web/model --int8
+python docs/export_model.py --ckpt ckpt/final/model.pt --out docs/model --int8
 ```
 
 Use a bundled checkpoint with edit candidates and decode readings. Omit `--int8` for a full-precision export. The exporter checks the graph and compares outputs against PyTorch at several sequence lengths. To exercise the shipped WASM runtime and model together with Node.js 24:
